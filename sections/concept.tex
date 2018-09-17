@@ -1,0 +1,129 @@
+
+%----------------------------------------------------------------
+% Concept
+%----------------------------------------------------------------
+\section{Concept}
+\label{sec:concept}
+
+- premise: camera is able to generate lots of (sensitive) data
+- challenge: camera is not always focused on points of interest
+- use case if solved: points where interesting information about user can be seen/user which can be used for espionage, commercial use, etc.
+- solution: guide user to move camera/focus on PoI through gameplay elements
+
+
+
+% Concept
+- 4 elements: gathering energy points (the in-game currency), capturing demons, beat other players in combat, beat their demons protecting the stashes
+
+- main goal for the player is to "dominate" as much of the real world as possible
+
+%- Therefore it's necessary that the player places stashes at fixed geo-locations whose range of influence can be extended by placing demons on them which furthermore defend the stashes against attackers 
+%- (for implementation: the stronger the demons, the bigger the range of influence --> direct correlation) 
+%- stashes can only be placed at current location
+
+%- in the area of influence of one player it's not possible for other players to place their stashes --> hence players are forced to attack hostile stashes to decrease their area of influence (by killing defending demons) or ideally to destroy the whole stash and steal in-game currency called energy/experience points placed by the defender
+
+\subsection{Getting Demons}
+\label{subsec:demons}
+
+- with the virtual currency the user is able to summon new demons that can then be used to fight other stashes or to defend the own stashes
+
+- for summoning the user needs to be in the area of influence of one of his stashes --> the bigger and stronger the stash, the higher the likelihood of a successful incantation (or a stronger demon)
+--> this makes it very likely for the user to place a stash somewhere where he often goes to 
+--> assumption: users will defend their real world homes, work places, schools, universities, ... to increase their time to summon demons
+
+- another way to collect demons is to catch demons which are present in the real world
+- therefore an AR view is used in which the user has to find, follow, fight and finally catch the demons
+- scan room with phone if demon is close and combat it in order to catch it
+- demon is trying to avoid capture by flying around while player is trying to weaken it by shooting (tapping demon on screen) it and, once the demon is "weakened", casting spells to bind it (drawing special figures on screen)
+- on success demon is captured by player and will be added to the user's demon collection. from there it can be user to attack other stashes, to defend own stashes or to sacrifice it to receive EP for it
+
+\subsection{Stashes and EP}
+\label{subsec:stashesandep}
+
+- not possible to "carry" unlimited amount of EP 
+- stashes serve as deposit boxes for EP
+
+- stashes mark territory of player (circle around stash)
+- can only be placed at current location
+- are visible to all other players 
+- have to be defended against attackers
+- range of influence can be extended by placing demons on them which furthermore defend the stashes against attackers 
+- also the max capacity of EP that the stash can hold increases with the strength of the defending demons
+
+- in the area of influence of one player it's not possible for other players to place their stashes --> hence players are forced to attack hostile stashes to decrease their area of influence (by killing defending demons) or ideally to destroy the whole stash and steal in-game currency called energy/experience points placed by the defender
+
+- forces players to place stashes in the real world 
+- provokes other players to limit their possible range of influence and steal the stashed EPs
+--> are player's game progress
+--> should be hard to destroy
+
+- multiple stati
+
+1. created stash with no EP in it --> only visible to creator as long as no demons and no EPs in it
+
+2. when EP deposited but no demon placed to defend --> visible to everyone with blue perimeter, showing that EP are free to collect for everyone in a specific range (currently 100 m)
+
+3. when alive demons are defending it --> red perimeter for opponent stashes, yellow for own stashes. perimeter range depending on strength of defending demons
+--> player cannot see defending demons of hostile stashes --> makes it more unpredictable how good stashes are defended
+- also allows for "bluffs" (player can place many demons on a stash without having any EP in it) e.g. just to restrict/narrow the max area of other players
+
+%- stashes are visible to other players (on the map) and can be attacked by them (currently only one demon at the time) 
+
+\subsection{Attacking and defending stashes}
+\label{subsec:attackingstashes}
+
+- players can attack stashes of others
+
+- battling stashes (currently) always involves exactly two parties, an attacking demon and a static collection of defending demons which were placed on the attacked stash in advance
+
+- when attacker wins the fight the EP of the defeated stash get exposed 
+- is shown to everyone and everyone nearby can collect the EP by clicking on the stash (if he has enough capacity) --> currently user needs to be in a radius of 100 m around the stash 
+
+--> motivates players to move irl and to expose more documents/sensitive content
+
+- also motivates other players to check regularly if they have a defeated stash nearby to collect the EP
+
+[picture of defeated stash]
+
+- the fights are conceptualized that it's hard to destroy a stash as stashes and the deposited EP within them are basically the user's game progress
+- and as one stash can theoretically be attacked by everyone
+
+- nevertheless opponent players obviously have the chance to ally to pursue their common goal of decreasing a strong defender's range of influence (currently need to communicate irl, later possibly in app)
+
+- very important to balance the summoning cost of different kinds of demons with the possible amount of EP an attacker can receive when destroying a stash
+- hasn't been tested with real users for the current implementation
+
+\subsection{Future Gameplay Ideas}
+\label{subsec:futuregameplayideas}
+
+- when player attacks a stash: demon first has to get to the stash --> dependant on the distance to stash 
+
+- show the attacking demon on map next to the defenders and display current fight status over their icons
+
+%- as stashes are publicly visible to everyone and as stashes and the deposited EP within them are basically the user's game progress it was necessary to make it hard for attackers to destroy a stash
+
+- [include pictures of every step]
+
+\subsection{Collecting Data}
+\label{subsec:collectingdata}
+
+% Welche Daten sammeln wir dabei? → “Dämon als Datenpunkt”
+- capturing a demon: two phases
+- phase 1: scanning, demon is flying around randomly while the captured camera frames are processed
+- camera frames are rated by specific metrics. goal is to identify interesting points (e.g. text, brands, faces) to send the user to -> best frames are PoI
+- phase 2: capturing, demon flies to PoI to force the user to point camera at it and "cast the spell" (i.e. hold phone relatively even while pointing at the PoI and with half of the view covered by pattern/finger)
+- more detailed processing of captured frames
+(- also geolocation of user can be captured when he places stashes/moves around to attack others)
+
+% Berechtigungen ergeben Sinn
+- principle to not fabricate the threat too much:
+- all permissions which the user has to grant are used in the game and their use is easily comprehensible for the user
+ - Camera: AR
+ - Location: place and attack stashes available at real world locations
+ - Internet: Needed to sync with other players, get information about demons
+ 
+% Möglichst geringe Ressourcennutzung
+- not possible to stream all frames to server for further analysis -> would use too much bandwidth
+- also processing of every single frame on the server would take too much time 
+- preprocess frames and rate them -> only send best frames to server

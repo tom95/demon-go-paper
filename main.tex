@@ -1,0 +1,244 @@
+\documentclass[english]{cgspaper} % change option to 'english' to include english logo in \copyrightspace
+
+%\usepackage[ngerman]{babel} % comment out to use english in auto-generated section titles
+\usepackage[utf8]{inputenc}
+\usepackage[ruled]{algorithm}
+\usepackage{algpseudocode}
+\usepackage{url}
+\usepackage{csquotes}
+
+\title{Demonstration of Game-Based Object Detection}
+\author{Tom Beckmann\\ Digital Engineering Faculty, Hasso Plattner Institute \textbar{} University of Potsdam}
+\author{Philipp Bode\\ Digital Engineering Faculty, Hasso Plattner Institute \textbar{} University of Potsdam}
+\author{Julius C. R. Rudolph\\ Digital Engineering Faculty, Hasso Plattner Institute \textbar{} University of Potsdam}
+\author{Hendrik Rätz\\ Digital Engineering Faculty, Hasso Plattner Institute \textbar{} University of Potsdam}
+
+% Konfiguration des Veranstaltungs-Feldes
+\subject{%
+    \textbf{Advanced Games of Life}\\
+    Sommersemester 2018\\
+    Themenstellung und Anleitung:
+    Daniel Limberger und Prof.\ Dr.\ Jürgen Döllner}
+
+\begin{document}
+
+% Definition des Teasers
+\teaser{
+    \includegraphics[width=0.9\textwidth]{graphics/prozess.pdf}
+    \caption{Beispiel für einen Teaser: Schritte beim Erstellen eines fachwissenschaftlichen Beitrags. Ein Teaser dient als Blickfang schon auf der ersten Seite eines Artikels.}
+    \label{fig:prozess}
+}
+
+\maketitle
+
+%----------------------------------------------------------------
+% Zusammenfassung
+%----------------------------------------------------------------
+\begin{abstract}
+\end{abstract}
+
+\copyrightspace % Erzeugt den Hinweis auf die Veranstaltung links unten
+\input{sections/introduction.tex}
+\input{context.tex}
+
+%----------------------------------------------------------------
+% Related Work
+%----------------------------------------------------------------
+\section{Related Work}
+\label{sec:related_work}
+Related projects/Work
+
+% Wie analysieren wir diese?
+\input{sections/concept.tex}
+
+%----------------------------------------------------------------
+% Implementation
+%----------------------------------------------------------------
+
+% Implementierung des Spielkonzepts (vermutlich mit Fokus auf AR)
+% Limitierungen von AR (bzw. Wie gehen wir damit um?)
+
+\section{Gameplay Implementation}
+\label{sec:gameplay_implementation}
+- game uses AR to capture demons; involves getting idea about the location, correlating it to 2d frames that are analyzed by pipeline
+
+\subsection{ARCore}
+- ARCore: definition, scope of the library, other applications (FIXME: move to a background section?)
+- Concepts: session w/ tracking info, anchors, plane detection --> focused on getting a stable "game board"
+
+- our use: getting an idea about the room's dimensions, moving objects in virtual scene believably relative to phone's movement
+- estimating room size: incentivizing turning by defining a "start room" for demon that progressively grows --> assumes user is not pressed against a wall
+- problems w/ room size: abusing tracking points might include outliers that artificially extend the room --> makes game elements inaccessible; fast movement may reduce quality
+
+\subsection{Map View}
+- using MapBox to display an interactive map of the augmented world with markers at the positions of stashes (different colors for own and hostile stashes) with their perimeter/range of influence
+- for own stashes the user also sees icons for every demon he placed to defend the stash 
+
+- markers are pinned by geo-location on the map
+
+\subsection{Storing and syncing stash data}
+- need to easily sync the current game state (players, stashes, demons) across multiple clients on different devices
+
+- using document-based NoSQL-database Google Firestore (cloud hosting, synced state across clients, easy setup) --> current flagship database of Google for mobile app development
+
+- document hierarchy: player id --> stashes/null stash --> demons for stash (everything indexed by id)
+
+- App implements change listeners for the collections of stashes and demons --> depending on what type of event happened stash/demon markers on the map (ideally only nearby) need to be redrawn
+--> updated after every fight and every placement of a demon onto a stash
+
+- demons that the player didn't place at a stash are saved in the player's "null-stash" which is not saved in the collection of stashes (as it does not need to be synced with the other players)
+- updated when new demon was summoned or captured and after every fight in which the attacking demon lost health points
+
+\subsection{Demon fights}
+
+- the current implementation is a simulation that follows a round-based approach. In every round the attacking demon assaults one defending demon and afterwards gets assaulted by every defending demon sequentially. Thereby both the order in which the defenders are attacked by the attacker and the order in which the defenders counter-attack the attacking demon are shuffled once in advance of the fight. 
+
+- makes the fight more unpredictable and harder for the attacker to guess which demons he might eliminate. After a fight both users are informed about the result (using Android Toast/Push Notification) and the health points of the surviving demons are updated in the corresponding Google Firestore documents.
+
+- as users can currently add an unlimited amount of demons to a stash the defense of a stash gets exponentially stronger the more demons the defender places on them
+
+- in a future version: defender can interactively intervene in the fight and dynamically add more defenders to the stash -> therefore fight must obviously take a while
+
+
+\subsection{Snapshots}
+- every frame is distilled into a "Snapshot" containing pixel data, all tracking points, view-proj-matrices. pixel data is passed on to pipeline
+- pipeline reports back with 2d PoI
+- challenge: likely won't have depth component for an arbitrary point on image
+- solution: project tracking points to 2d plane, find closest
+
+- pipeline calls project method, stores best hits for PoI
+- game/AR component later requests best 0-5 PoI from pipeline
+- generates random ones within room at reachable height to make game experience more consistent (i.e. not make game easier in plain rooms)
+
+\section{Data Analysis Implementation}
+\begin{figure*}
+    \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
+    \caption{Pipeline Phase 1}
+    \label{fig:prozess}
+\end{figure*}
+
+% FIXME intro to OpenCV, features, usages?
+- pipeline which processes every frame (captured by camera while capturing demons) on phone
+- preselect frames which are sent to server
+- only best should get sent
+- pipeline consists of independent sets which could be ordered in any order -> same interface
+- frames are wrapped in \textit{Snapshots} (ensures that the same object is passed between steps)
+
+\subsection{Snapshots / Communication with Pipeline}
+% FIXME in parts dupl with ARCore.Snapshots above -- might be fine if we focus on the pipeline-specific aspects
+- holds OpenCV Mat (represents frame) and score (calculated in steps)
+- also able to convert Mat to base64 and make a parameter list out of attributes (both for sending) 
+
+- AR-Snapshots: additional fields (points in room and viewProjectionMatrix)
+
+\subsection{Steps}
+- contain list of following steps (in next)
+- able to track time of execution
+- .start(snap) -> .process(snap) -> .output(snap) (starts all steps in next with processed snapshots)
+
+- special case: \textit{StepWithQueue}
+- additional priority queue based on snapshot score
+- getBestAndClear (angleChange) and getBest (sendingStep)
+- used in angleChange and sendingStep where the only the best frame should be handled/should be handled first
+
+% Daten-Analyse-Pipeline
+ % Finden von PoI
+ % Capturing und Processing
+ 
+ \subsubsection{Blur Estimation}
+ - try to use/analyze only those frames which are not too blurry and send those to the server (reduce traffic)
+ - convert image to grayscale (only one channel)
+ - apply Laplace Operator (edge detection)
+ - calculate variance of it 
+ -> used as score for blurriness: low value = high blurriness, high value = low blurriness
+ - reason: Laplace detects edges, if edges are not to clear (low variance) picture may be blurry
+ - transform blurriness value to value between 0 and 1 (everything above 500 is 1 everything else bluriness value/500)
+\subsubsection{Brand/Pattern Recognition}
+- Utilizes keypoint detection and feature descriptor matching to match recognizable patterns like brand logos and letterings \\
+- The ORB (Oriented FAST and Rotated BRIEF) technique is used \cite{rublee2011orb} \\
+- Computationally expensive step is keypoint calculation for frame.\\
+-> Comparison with large number of patterns possible, as their keypoints can be precalculated.
+
+\subsubsection{Contour Detection}
+- Gaussian Blur -> bilateral filter -> Canny edge detection -> find Contours and cull by minimum size and maximal edges.\\
+- Found contours are cropped and passed to next steps for likelihood of text estimation
+
+\subsubsection{Noise Estimation}
+- A simple kernel for fast noise estimation for which the authors note \enquote{In textured images or regions, though, the noise estimator perceives thin lines as noise.} \cite{immerkaer1996fast}. \\
+- We utilize this property to detect probable regions with dense text.
+
+\subsubsection{Colorfulness Estimation}
+- Simple measure for estimating colorfulness of an image \cite{hasler2003measuring}. \\
+- We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
+
+\subsection{Communication between phone and server}
+- uses volley to send POST-requests to server
+- adds best captured frame (out of Snapshot queue) to Volley-request-queue every 0.5s
+- base64 encoded frame
+- also adds a unique user ID and firebase token to request
+- sending of requests in background asap
+
+- every 100th frame is put directly into sending queue after going through blurriness and anglechange
+- if no/few frames make it through the rest of the pipeline (contourdetction/noise) at least some frame frames are getting sent to server
+- if over frames are in sending queue, frames with better scores are transmitted first
+
+
+\subsection{Server-side Analysis}
+
+- Flask/Flask-SocketIO server with sqllite db
+- decodes received images and writes them to the disk (for now)
+- detects where possible text is written on saved image
+- crops image for every box \& saves it
+- analyses rotaion of text, removes rotation and runs pytesseract on it 
+- saves user\_id, filename of cropped img, analysed text, rotation, timestamp and confidence of analysis (given by pytesseract) to db
+- also informs the frontend (?) about added and processed images via SocketIO
+
+
+%----------------------------------------------------------------
+% Evaluation
+%----------------------------------------------------------------
+
+\section{Evaluation}
+\label{sec:evaluation}
+
+% AR-Komponente (Bewegung des Dämons, Werden die PoI’s wiedergefunden, etc.)
+- biggest challenge: ensuring that tracking points at PoI remain consistent as user approaches; old visual context is lost as they focus e.g. on a single part of the desktop --> might cause ARCore to recalc coordinate system (could have been nice to pause allocation of tracking points and rely on accelerometer, but ARCore does not support this)
+% FIXME: to be tested further:
+- by defining anchors on the relevant tracking points, ARCore will ensure most of the time that objects remain within reach -- timeout and fallback to showing spell even though user is not close enough otherwise
+
+- movement of demon feels weird at start, as dimensions of room are unknown
+- placement of waypoints close to user confuse, but as they traverse the room and turn frequently it's hard to predict where they will be
+
+% FIXME: to be evaluated if that applies to anyone else but me:
+- handling of phone is tricky: most users held phone in right hand, shot w/ left hand in scanning phase. switch hands when entering capturing phase for drawing spells --> messes up coordinate system as phone points to floor temporarily
+
+% Erkennung der Points of Interest
+- Blurriness: Laplacian is not too precise, e.g. when using shallow focus, some regions are completely focused whereas some are totally blurry
+--> will result in low blurriness value
+
+% Brand-Detection
+
+% Textanalyse mit OCR
+- Wo wird im Bild Text erkannt?
+- Kann dieser Text interpretiert werden, wenn ja, wie gut?
+- Was sind Probleme? (Schriftart, Blurriness, distortion)
+
+% Scalability
+
+%----------------------------------------------------------------
+% Conclusion
+%----------------------------------------------------------------
+\section{Conclusion}
+\label{sec:conclusion}
+
+% Future Work
+- z.B. weitere Daten sammeln und komplexere Nutzerprofile anlegen
+- Data Analytics auf den gesammelten Infos
+
+%----------------------------------------------------------------
+% Sources
+%----------------------------------------------------------------
+\bibliographystyle{acmsiggraph}
+\bibliography{foo-paper}
+
+\end{document}
