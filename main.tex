@@ -61,7 +61,10 @@ Related projects/Work
 \section{Gameplay Implementation}
 \label{sec:gameplay_implementation}
 % - game uses AR to capture demons; involves getting idea about the location, correlating it to 2D frames that are analyzed by pipeline
-In this section, we will outline the implementation of Demon GO. We will first describe how the advanced game play elements for player vs player interactions are handled, then demonstrate how the augmented reality component allows players to capture demons, and then move on to the data exploitation subsystem. Snapshots from the augmented reality component form the bridge between the game and the exploitation subsystems. The exploitation subsystem consists of a light weight image processing pipeline on the player's phone and a server component for heavier processing.
+In this section, we will outline the implementation of Demon GO.
+We will first describe how the advanced game play elements for player vs player interactions are handled, then demonstrate how the augmented reality component allows players to capture demons, and then move on to the data exploitation subsystem.
+Snapshots from the augmented reality component form the bridge between the game and the exploitation subsystems.
+The exploitation subsystem consists of a light weight image processing pipeline on the player's phone and a server component for heavier processing.
 
 \subsection{Map View}
 - using MapBox to display an interactive map of the augmented world with markers at the positions of stashes (different colors for own and hostile stashes) with their perimeter/range of influence
@@ -97,7 +100,12 @@ In this section, we will outline the implementation of Demon GO. We will first d
 \section{Data Analysis Implementation}
 \begin{figure*}
     \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
-    \caption{Pipeline Phase 1}
+    \caption{Pipeline Scanning Phase}
+    \label{fig:prozess}
+\end{figure*}
+\begin{figure*}
+    % \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
+    \caption{Pipeline Capturing(Detail) Phase}
     \label{fig:prozess}
 \end{figure*}
 
@@ -105,7 +113,7 @@ In this section, we will outline the implementation of Demon GO. We will first d
 - pipeline which processes every frame (captured by camera while capturing demons) on phone
 - preselect frames which are sent to server
 - only best should get sent
-- pipeline consists of independent sets which could be ordered in any order -> same interface
+- pipeline consists of independent steps which could be ordered in any order -> same interface
 - frames are wrapped in \textit{Snapshots} (ensures that the same object is passed between steps)
 
 \subsection{Snapshots / Communication with Pipeline}
@@ -141,7 +149,9 @@ In this section, we will outline the implementation of Demon GO. We will first d
 - Utilizes keypoint detection and feature descriptor matching to match recognizable patterns like brand logos and letterings \\
 - The ORB (Oriented FAST and Rotated BRIEF) technique is used \cite{rublee2011orb} \\
 - Computationally expensive step is keypoint calculation for frame.\\
--> Comparison with large number of patterns possible, as their keypoints can be precalculated.
+-> Comparison with large number of patterns possible, as their keypoints can be precalculated.\\
+- 'cheaper' than neural network, especially on mobile devices\\
+- much better results than template matching
 
 \subsubsection{Contour Detection}
 - Gaussian Blur -> bilateral filter -> Canny edge detection -> find Contours and cull by minimum size and maximal edges.\\
