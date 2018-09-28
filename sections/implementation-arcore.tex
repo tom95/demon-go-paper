@@ -30,13 +30,25 @@ This will have the most undesired consequence of game elements appearing to pene
 Second, the fact that the demon moves quickly in small spaces initially not only encourages turning, but specifically may prompt players to turn quickly.
 The quick movement, however, reduces the quality of the camera images and makes it harder for ARCore to compute the delta movement, which in turn also reduces the quality of the understanding of the room's size as it is provided to us by ARCore.
 
+To reduce the impact on gameplay of this issue, we stopped relying on the room dimensions and instead started using only locations where we knew that ARCore had found high quality image features.
+The algorithm works as follows: We define four points in all directions around the user in a plus-like shape, all of them 30 meters away and with the lowest possible confidence, which we designate as the best points.
+In each frame, we get the tracking point with the highest reported confidence, as reported by ARCore, and remember it as our candidate point.
+We then find the best point closest to our candidate and replace the current best, if the candidate's confidence is higher.
+When the points are requested by the pipeline, we will first try to fill up points using our best points, if their confidence is higher than a threshold.
+Otherwise we, again, fall back to using random points.
+Using this method, we managed to get the demon to very stable positions most of the time, while still ensuring that it will not always be in the same corner of the room, where a lot of high quality of high-confidence points were found, as those will keep only replacing their closest best and not affect the other three.
+
 \subsection{Snapshots}
 % - every frame is distilled into a "Snapshot" containing pixel data, all tracking points, view-proj-matrices. pixel data is passed on to pipeline
 We distill every frame provided by ARCore to a snapshot.
-This snapshot contains the pixel data, typically at a resolution of 1080 by 1920 pixels, the position in virtual space of all tracking points currently in the ARCore session and the current view and projection matrices of the virtual camera.
+This snapshot contains the pixel data, typically at a resolution of 1080 by 1920 pixels, the position in virtual space of all tracking points currently in the ARCore session and the current view and projection matrices of the virtual camera. See figure \ref{fig:snapshot_data} for a Visualization.
 These snapshots are pushed to a queue to which the pipeline of the exploitation subsystem, which runs in a separate thread, can pop from.
 
-% Comment from Daniel: Perhaps show some examples of such snapshots and the derived data.
+\begin{figure}
+    \includegraphics[height=6cm]{graphics/snapshot-points.jpg}
+    \caption{Visualization of the information saved in a snapshot. Visible are the pixel data of the image and the subset of tracking points that are saved, symbolized by the cubes. Red cubes report a low confidence, green cubes a high confidence. The confidence information is currently not persisted in the snapshots, but useful for debugging.}
+    \label{fig:snapshot_data}
+\end{figure}
 
 % - pipeline reports back with 2d PoI
 % - challenge: likely won't have depth component for an arbitrary point on image
