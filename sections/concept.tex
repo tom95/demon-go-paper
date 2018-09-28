@@ -2,36 +2,47 @@
 %----------------------------------------------------------------
 % Concept
 %----------------------------------------------------------------
-\section{Privacy intrusion through AR and CV technologies}
+\section{Privacy Intrusion Through AR and CV Technologies}
 
--(factor 1) Advancement of augmented reality technologies (robustness, accuracy) and ease of integration (AR libraries) will presumably lead to a surge in mobile applications utilizing such features. \\
--(factor 2) Current AR applications are often developed for entertainment purposes or as feature showcase, but with increasing maturity of the technology, conceivable use cases appear in a wide range of domains, e.g. information display in professional environments, medical application, support of sensory functions, etc. \\
-- (factor 3) By necessity, AR applications are granted permission to access the camera input of the mobile device. This opens up a visual window into the immediate and intimate vicinity of the user, often in their homes or work places. \\
-- Additionally, advancements in computer vision increase the computational interpretability of pictures or even extensive near real time analysis of video feeds.
+To demonstrate the risk of privacy intrusion of emerging augmented reality and computer vision technologies, we identified three factors that we believe to enable malicious users to abuse these technologies.
 
--> \textbf{Large scale data mining of the user's analog environment becomes  conceivable.}
+% -(factor 1) Advancement of augmented reality technologies (robustness, accuracy) and ease of integration (AR libraries) will presumably lead to a surge in mobile applications utilizing such features. \\
+% -Current AR applications are often developed for entertainment purposes or as feature showcase, but with increasing maturity of the technology, conceivable use cases appear in a wide range of domains, e.g. information display in professional environments, medical application, support of sensory functions, etc. \\
+First, advancements of augmented reality technologies, in particular in terms of robustness and accuracy may in the future lead, and in parts already have led, to a surge in mobile applications utilizing such features.
+Their ease of integration is greatly enhanced by dedicated libraries offered by smartphone vendors, such as Google and Apple.
+Increasing computational power in consumer devices allows these libraries to use 2D images to compute the depth of the room, instead of having to rely on dedicated hardware to read the depth.
+While currently AR applications are often developed for entertainment purposes or as a feature showcase, one can expect AR technology to become common in more diverse areas, such as information display in professional environments, medical applications, or support of sensory functions.
+% - (factor 3) By necessity, AR applications are granted permission to access the camera input of the mobile device. This opens up a visual window into the immediate and intimate vicinity of the user, often in their homes or work places. \\
+Second, this poses a danger, as, by necessity, AR applications are granted permission to access the camera input of the mobile device.
+With AR applications being used in diverse areas, as outlined in point two, highly sensible information will be made visible to the mobile device and opens up a visual window into the user's immediate and intimate vicinity of the user, often in their homes or work places.
+% - Additionally, advancements in computer vision increase the computational interpretability of pictures or even extensive near real time analysis of video feeds.
+Third, progress in the area of computer vision increase the computational ability to interpret pictures in machine-readable formats. This goes to the extent that even the real time or near real time analysis of video feeds becomes possible. Otherwise, emerging offers in cloud infrastructure by for example Google offer services specifically designed to quickly and efficiently process image input at scale.
 
-- Malicious actor: Could uncover sensitive information that is heavily protected in the digital world.
-Possible desirable information could be tax identification numbers, bank account numbers, social security numbers, etc., i.e. anything that can often be found in plain sight on sensitive documents but is well-encrypted in digital representations.
+% -> \textbf{Large scale data mining of the user's analog environment becomes  conceivable.}
+Combined, advancing computer vision allows large scale data mining, while augmented reality places the camera sensors right in the user's most sensible environment.
+Additionally, AR games may even allow manipulating the user into navigating to specific areas that the malicious application considers particularly interesting, by moving important game play elements in those areas and prompting the user in this way to point the camera at specific points of interest.
 
--Authoritarian governments: Surveillance use cases; automatic detection of contraband or illicit material, even cues for dissident tendencies. Potential for integration of analysis capabilities on the OS level with e.g. a custom Android distribution.
+% - Malicious actor: Could uncover sensitive information that is heavily protected in the digital world.
+As a consequence, a malicious actor aiming to steal data from users could uncover sensitive information that may be heavily protected from access in the real world, but could be immediately revealed by legitimate actors with access to the area, if they use a compromised AR application.
+% Possible desirable information could be tax identification numbers, bank account numbers, social security numbers, etc., i.e. anything that can often be found in plain sight on sensitive documents but is well-encrypted in digital representations.
+Information that could be compromised in the setting of a regular consumer game includes all information that is printed out and would otherwise be well protected in a digital setting, such as tax identification numbers, bank account numbers, or social security numbers.
 
-- Profit driven actor: Allows the creation of precise consumer profiles for targeted advertising and audience selection. Could provide insights that classical profiles generated by online behaviour analysis lack.
+% -Authoritarian governments: Surveillance use cases; automatic detection of contraband or illicit material, even cues for dissident tendencies. Potential for integration of analysis capabilities on the OS level with e.g. a custom Android distribution.
+Authoritarian governments, however, may receive free and voluntary access to a huge number of surveillance cameras all over the country if an application is compromised. This may allow automatic detection of contraband or illicit material, or even cues for dissident tendencies. Large scale actors like a government may even have the potential for integration of analysis capabilities on the OS level, by using for example a custom Android distribution.
+This would evidently allow them to have the camera record at all times, independent of an application, but via AR they also receive the option to navigate the user and incentivize moving the phone's camera around the room.
 
-However, mere panning over a room's interior does not provide images with a high enough resolution to gather most often fine-printed information.
-Techniques like optical character recognition (OCR) that enable the automatic processing of captured text require close-ups shots of points of interest.
-With the Demon Go prototype, we try to lead the user into providing these necessary close-up shots.
-In order to hide the video analysis from the user, we align the requirements on the camera feed with plausible and engaging game mechanics.
+% - Profit driven actor: Allows the creation of precise consumer profiles for targeted advertising and audience selection. Could provide insights that classical profiles generated by online behaviour analysis lack.
+Further, profit driven actors could use the gathered information to gain insights into the user's non digital life, to create even more precise consumer profiles for targeted advertising and audience selection.
+
+% However, mere panning over a room's interior does not provide images with a high enough resolution to gather most often fine-printed information.
+Many of these use cases currently require images of very good quality.
+Techniques like optical character recognition (OCR), for example, which enable the automatic processing of captured text, require close-ups shots and sufficient picture clarity.
+With the Demon Go prototype, we demonstrate an approach where the user is lead into providing these necessary close-up shots.
+To hide this exploitation from the user, we align the requirements on the camera feed with plausible and engaging game mechanics.
+We specifically designed the prototype in a way that the exploitation aspect remains as well hidden as possible, and appears to merely be using features required for the game to work.
 
 \section{Game Concept}
 \label{sec:concept}
-
-% - premise: camera is able to generate lots of (sensitive) data
-% - challenge: camera is not always focused on points of interest
-% - use case if solved: points where interesting information about user can be seen/user which can be used for espionage, commercial use, etc.
-% - solution: guide user to move camera/focus on PoI through gameplay elements
-
-
 
 % Concept
 - 4 elements: gathering energy points (the in-game currency), capturing demons, beat other players in combat, beat their demons protecting the stashes
