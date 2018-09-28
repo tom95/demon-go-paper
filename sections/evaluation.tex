@@ -27,17 +27,17 @@ This helped most of the time to ensure that the demon will at least be within th
 To not block the game altogether when the demon attaches to a point with incorrect depth, making it impossible for to the user to come close enough, we added a timeout that will move the game onwards in the hope that the next point may be better.
 
 \subsection{Demon Movement}
+
+% Comment from daniel: I would like to see lots of images here, e.g., show a stupid positioning due to errors, or how does good tracking accuracy compare to a bad one by example
+\begin{figure}
+    \includegraphics[height=8cm]{graphics/demon-wrong-depth.jpg}
+    \caption{The demon appears to be floating inside the wall. The debug output in the console reported a distance from the camera of about 7 meters while this frame was captured. The distance from the camera to the wall is about 2 meters.}
+    \label{fig:demon_wrong_depth}
+\end{figure}
+
 % - movement of demon feels weird at start, as dimensions of room are unknown
 The movement of the demon in our current implementation is simplistic and makes next to no use of advanced possibilities, like collision detection.
 This is mainly because the quality of the tracking points even for our room size estimation may vary greatly, so that we chose to use the simplest possible primitive volume in 3D space to reduce the chance of the demon getting locked within non-existing obstacles that have been formed by errors in the tracking point estimation.
-
-% Comment from daniel: I would like to see lots of images here, e.g., show a stupid positioning due to errors, or how does good tracking accuracy compare to a bad one by example
-\begin{figure*}
-    \includegraphics[width=\textwidth]{graphics/demon-wrong-depth.jpg}
-    \caption{The demon appears to be floating inside the wall. The debug output in the console reported a distance from the camera of about 9 meters while this frame was captured.}
-    \label{fig:demon_wrong_depth}
-\end{figure*}
-
 
 % - placement of waypoints close to user confuse, but as they traverse the room and turn frequently it's hard to predict where they will be
 Our concept of exploring the room size by encouraging the user to turn frequently at the start of the session, by making the room very small, may lead to some confusion as the demon appears to travel through impossible ways, for example through the user.
