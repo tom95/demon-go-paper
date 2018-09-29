@@ -9,12 +9,12 @@ To demonstrate the risk of privacy intrusion of emerging augmented reality and c
 % -(factor 1) Advancement of augmented reality technologies (robustness, accuracy) and ease of integration (AR libraries) will presumably lead to a surge in mobile applications utilizing such features. \\
 % -Current AR applications are often developed for entertainment purposes or as feature showcase, but with increasing maturity of the technology, conceivable use cases appear in a wide range of domains, e.g. information display in professional environments, medical application, support of sensory functions, etc. \\
 First, advancements of augmented reality technologies, in particular in terms of robustness and accuracy may in the future lead, and in parts already have led, to a surge in mobile applications utilizing such features.
-Their ease of integration is greatly enhanced by dedicated libraries offered by smartphone vendors, such as Google and Apple.
+Their ease of integration is greatly enhanced by dedicated libraries offered by smartphone vendors, such as Google and Apple.\\
 Increasing computational power in consumer devices allows these libraries to use 2D images to compute the depth of the room, instead of having to rely on dedicated hardware to read the depth.
 While currently AR applications are often developed for entertainment purposes or as a feature showcase, one can expect AR technology to become common in more diverse areas, such as information display in professional environments, medical applications, or support of sensory functions.
 % - (factor 3) By necessity, AR applications are granted permission to access the camera input of the mobile device. This opens up a visual window into the immediate and intimate vicinity of the user, often in their homes or work places. \\
 Second, this poses a danger, as, by necessity, AR applications are granted permission to access the camera input of the mobile device.
-With AR applications being used in diverse areas, as outlined in point two, highly sensible information will be made visible to the mobile device and opens up a visual window into the user's immediate and intimate vicinity of the user, often in their homes or work places.
+With AR applications being used in diverse areas, as outlined in point two, highly sensible information will be made visible to the mobile device and opens up a visual window into the user's immediate and intimate vicinity of the user, often in their homes or work places.\\
 % - Additionally, advancements in computer vision increase the computational interpretability of pictures or even extensive near real time analysis of video feeds.
 Third, progress in the area of computer vision increase the computational ability to interpret pictures in machine-readable formats. This goes to the extent that even the real time or near real time analysis of video feeds becomes possible. Otherwise, emerging offers in cloud infrastructure by for example Google offer services specifically designed to quickly and efficiently process image input at scale.
 
@@ -45,11 +45,27 @@ We specifically designed the prototype in a way that the exploitation aspect rem
 \label{sec:concept}
 
 % Concept
-- 4 elements: gathering energy points (the in-game currency), capturing demons, beat other players in combat, beat their demons protecting the stashes
 
-- main goal for the player is to "dominate" as much of the real world as possible
+The game concept is heavily inspired by the book series Bartimäus and the already mentioned globally successful AR game Pokemon GO.
 
-%- Therefore it's necessary that the player places stashes at fixed geo-locations whose range of influence can be extended by placing demons on them which furthermore defend the stashes against attackers 
+Its main goal for the player is to control as much territory of the augmented world as possible.
+
+Therefore players needs to place public stashes at fixed geo-locations which mark their reign and have a specific range of influence. 
+To defend those stashes against attackers, the player needs to collect demons. The demons are flying around in the augmented world and can be captured by the players. 
+Besides defending stashes demons can also be used to attack other stashes and directly extend the range of influence of the stashes on which they are placed.
+
+Moreover the player gathers energy points (EP) in the game that he can use to summon stronger demons.
+
+As the player can only hold a maximal capacity of EP in his \enquote{in-game purse} he needs to place them in stashes where they can be stolen from opponents.
+
+\begin{figure}
+    \includegraphics[width=8cm]{graphics/map.png}
+    \caption{Screenshot of the map with stashes (markers) and defending demons.}
+    \label{fig:map}
+\end{figure}
+
+%- 4 elements: gathering energy points (the in-game currency), capturing demons, beat their demons protecting the stashes
+
 %- (for implementation: the stronger the demons, the bigger the range of influence --> direct correlation) 
 %- stashes can only be placed at current location
 
@@ -58,32 +74,41 @@ We specifically designed the prototype in a way that the exploitation aspect rem
 \subsection{Getting Demons}
 \label{subsec:demons}
 
-- with the virtual currency the user is able to summon new demons that can then be used to fight other stashes or to defend the own stashes
+- two ways: capturing and summoning
 
-- for summoning the user needs to be in the area of influence of one of his stashes --> the bigger and stronger the stash, the higher the likelihood of a successful incantation (or a stronger demon)
+The first way is to find, follow and fight demons that are present in the augmented world and can be seen through a 'magic lense' (AR view in app).
+
+To find a demon the player first has to search for flying spheres that represent demons in their hidden form. 
+The idea is that the sphere flies around quickly and changes its direction frequently which gets the player to scan as much of his surrounding area that can already get (pre) analyzed.
+To unleash the demon the player needs to tap the sphere multiple times. 
+
+Once the demon emerged from the sphere it is navigating towards points of interests that were derived from the camera stream in the scanning phase.
+To capture the demon the player first needs to get close enough to it which enables him to weaken it by 'casting spells' in form of drawing specific figures on the screen. 
+By getting closer to the demon the player ideally gives the camera a better view and angle onto the earlier detected points of interest which allows a better data analysis. 
+At the same time the virtual demon hides the controversial point of interest underneath it to not arouse suspicion. 
+
+After multiple successful spell castings the demon is captured and will be added to the player's demon collection. 
+From there it can be used to attack other stashes or to defend own stashes or can be sacrificed in order to receive EP for it.
+
+- for summoning (not implemented) the user needs to be in the area of influence of one of his stashes --> the bigger and stronger the stash, the higher the likelihood of a successful incantation (or a stronger demon)
 --> this makes it very likely for the user to place a stash somewhere where he often goes to 
 --> assumption: users will defend their real world homes, work places, schools, universities, ... to increase their time to summon demons
-
-- another way to collect demons is to catch demons which are present in the real world
-- therefore an AR view is used in which the user has to find, follow, fight and finally catch the demons
-- scan room with phone if demon is close and combat it in order to catch it
-- demon is trying to avoid capture by flying around while player is trying to weaken it by shooting (tapping demon on screen) it and, once the demon is "weakened", casting spells to bind it (drawing special figures on screen)
-- on success demon is captured by player and will be added to the user's demon collection. from there it can be user to attack other stashes, to defend own stashes or to sacrifice it to receive EP for it
 
 \subsection{Stashes and EP}
 \label{subsec:stashesandep}
 
 - not possible to "carry" unlimited amount of EP 
-- stashes serve as deposit boxes for EP
+- stashes serve as treasures for EP
 
-- stashes mark territory of player (circle around stash)
+- mark territory of player (circle around stash)
 - can only be placed at current location
 - are visible to all other players 
 - have to be defended against attackers
 - range of influence can be extended by placing demons on them which furthermore defend the stashes against attackers 
 - also the max capacity of EP that the stash can hold increases with the strength of the defending demons
+- user can have an unlimited amount of stashes
 
-- in the area of influence of one player it's not possible for other players to place their stashes --> hence players are forced to attack hostile stashes to decrease their area of influence (by killing defending demons) or ideally to destroy the whole stash and steal in-game currency called energy/experience points placed by the defender
+- in the area of influence of one player it's not possible for other players to place their stashes --> hence players are forced to attack hostile stashes to decrease their area of influence (by killing defending demons) or ideally to destroy the whole stash and steal EP placed by the defender
 
 - forces players to place stashes in the real world 
 - provokes other players to limit their possible range of influence and steal the stashed EPs

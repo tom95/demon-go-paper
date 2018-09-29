@@ -23,11 +23,11 @@
 \begin{document}
 
 % Definition des Teasers
-\teaser{
-    \includegraphics[width=0.9\textwidth]{graphics/prozess.pdf}
-    \caption{Beispiel für einen Teaser: Schritte beim Erstellen eines fachwissenschaftlichen Beitrags. Ein Teaser dient als Blickfang schon auf der ersten Seite eines Artikels.}
-    \label{fig:prozess}
-}
+%\teaser{
+    %\includegraphics[width=0.9\textwidth]{graphics/prozess.pdf}
+    %\caption{Beispiel für einen Teaser: Schritte beim Erstellen eines fachwissenschaftlichen Beitrags. Ein Teaser dient als Blickfang schon auf der ersten Seite eines Artikels.}
+    %\label{fig:prozess}
+%}
 
 \maketitle
 
@@ -39,7 +39,7 @@
 
 \copyrightspace % Erzeugt den Hinweis auf die Veranstaltung links unten
 \input{sections/introduction.tex}
-\input{context.tex}
+%\input{context.tex}
 
 %----------------------------------------------------------------
 % Related Work
@@ -62,7 +62,7 @@ Related projects/Work
 \label{sec:gameplay_implementation}
 % - game uses AR to capture demons; involves getting idea about the location, correlating it to 2D frames that are analyzed by pipeline
 In this section, we will outline the implementation of Demon GO.
-We will first describe how the advanced game play elements for player vs player interactions are handled, then demonstrate how the augmented reality component allows players to capture demons, and then move on to the data exploitation subsystem.
+We will first describe how the advanced gameplay elements for player vs player interactions are handled, then demonstrate how the augmented reality component allows players to capture demons, and then move on to the data exploitation subsystem.
 Snapshots from the augmented reality component form the bridge between the game and the exploitation subsystems.
 The exploitation subsystem consists of a light weight image processing pipeline on the player's phone and a server component for heavier processing.
 
@@ -138,13 +138,14 @@ The exploitation subsystem consists of a light weight image processing pipeline 
  % Capturing und Processing
  
  \subsubsection{Blur Estimation}
- - try to use/analyze only those frames which are not too blurry and send those to the server (reduce traffic)
- - convert image to grayscale (only one channel)
- - apply Laplace Operator (edge detection)
- - calculate variance of it 
- -> used as score for blurriness: low value = high blurriness, high value = low blurriness
- - reason: Laplace detects edges, if edges are not to clear (low variance) picture may be blurry
- - transform blurriness value to value between 0 and 1 (everything above 500 is 1 everything else bluriness value/500)
+ The Blur Estimation is needed to preselect snapshots whose quality is sufficient for further processing. 
+ The frame of the snapshot, which is processed, will be converted to a grayscale image before the Laplace operator is applied to it.
+ Afterwards the variance of the new image will be calculated and will indicate the blurriness where a higher variance will represent a sharper image.
+ The idea behind this approach is that a blurry image (because of its nature) is less likely to have a lot of clear edges. 
+ Therefore the variance of the Laplace operator, which is used to detect edges, will be lower than in a sharp picture. 
+ 
+ \subsubsection{AngleChange}
+ 
 \subsubsection{Brand/Pattern Recognition}
 - Utilizes keypoint detection and feature descriptor matching to match recognizable patterns like brand logos and letterings \\
 - The ORB (Oriented FAST and Rotated BRIEF) technique is used \cite{rublee2011orb} \\
@@ -166,16 +167,17 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 - We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
 
 \subsection{Communication between phone and server}
-- uses volley to send POST-requests to server
-- adds best captured frame (out of Snapshot queue) to Volley-request-queue every 0.5s
-- base64 encoded frame
-- also adds a unique user ID and firebase token to request
-- sending of requests in background asap
 
-- every 100th frame is put directly into sending queue after going through blurriness and anglechange
-- if no/few frames make it through the rest of the pipeline (contourdetction/noise) at least some frame frames are getting sent to server
-- if over frames are in sending queue, frames with better scores are transmitted first
+After a snapshot was processed in the pipeline it is added to the priority queue of the sending step where all snapshots are ordered by their calculated score.
+The transmission itself is handled by \textit{Volley} a fast Android networking library.
+Every 0.5s a POST-request will be prepared including the base64 encoded frame of the best snapshot in the priority queue and the id of the player. 
+After being added to the request queue of Volley, the request will then be sent to the server as soon as possible.
 
+Additionally every 100th frame, which enters the pipeline will be added to the queue of the sending step directly after passing the blur estimation and angle change step.
+This ensures that once in a while a data sent to the server if no other snapshot has a sufficient score after passing the other steps.
+The score generation, however, guarantees that this very rarely the case.
+
+% Direct sending after brand detection
 
 \subsection{Server-side Analysis}
 
@@ -201,6 +203,7 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 \label{sec:conclusion}
 
 % Future Work
+- Move away from contour-based region of interest recognition and aggregate 
 - z.B. weitere Daten sammeln und komplexere Nutzerprofile anlegen
 - Data Analytics auf den gesammelten Infos
 
