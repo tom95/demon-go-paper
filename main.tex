@@ -6,6 +6,8 @@
 \usepackage{algpseudocode}
 \usepackage{url}
 \usepackage{csquotes}
+\usepackage{subcaption}
+
 
 \title{Demonstration of Game-Based Object Detection}
 \author{Tom Beckmann\\ Digital Engineering Faculty, Hasso Plattner Institute \textbar{} University of Potsdam}
@@ -30,6 +32,7 @@
 %}
 
 \maketitle
+
 
 %----------------------------------------------------------------
 % Zusammenfassung
@@ -99,14 +102,14 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 
 \section{Data Analysis Implementation}
 \begin{figure*}
-    \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
+    \includegraphics[width=\textwidth]{graphics/new_pipeline_phase_1.png}
     \caption{Pipeline Scanning Phase}
-    \label{fig:prozess}
+    \label{fig:pipeline_phase1}
 \end{figure*}
 \begin{figure*}
     % \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
     \caption{Pipeline Capturing(Detail) Phase}
-    \label{fig:prozess}
+    \label{fig:pipeline_phase2}
 \end{figure*}
 
 % FIXME intro to OpenCV, features, usages?
@@ -154,17 +157,51 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 - 'cheaper' than neural network, especially on mobile devices\\
 - much better results than template matching
 
-\subsubsection{Contour Detection}
-- Gaussian Blur -> bilateral filter -> Canny edge detection -> find Contours and cull by minimum size and maximal edges.\\
-- Found contours are cropped and passed to next steps for likelihood of text estimation
+\begin{figure*}[!htb]
+  \centering
+  \subcaptionbox{Frame input\label{fig:cont_dect1}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/original.jpg}}\quad
+  \subcaptionbox{Preprocessed frame\label{fig:cont_dect2}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/canny.jpg}}\quad
+  \subcaptionbox{Selected contours\label{fig:cont_dect3}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/finished.jpg}}
 
-\subsubsection{Noise Estimation}
-- A simple kernel for fast noise estimation for which the authors note \enquote{In textured images or regions, though, the noise estimator perceives thin lines as noise.} \cite{immerkaer1996fast}. \\
-- We utilize this property to detect probable regions with dense text.
+  \caption{Detection of contours in a real-word scene.}\label{fig:cont_dect}
+\end{figure*}
+\textbf{Contour Detection: } \hfill \\
+As a starting point to check areas of the incoming frame for potentially sensitive information, we detect contours in the scene.
+We reason that this information can most likely be found in areas discernible from the rest of the frame, for example a piece of paper.
+The frame is preprocessed in several steps to maximize recognizable contours:
+First, we apply a Gaussian Blur with a small kernel to reduce image noise, and then apply a bilateral filter to smooth the image further while keeping edges intact.
+Afterwards, a Canny edge filter with a dynamic threshold is applied to binarize the frame.
+The result of this preprocessing can be found in figure~\ref{fig:cont_dect1}.
+On this image, we run a contour detection algorithm provided by OpenCV to retrieve a list of contours.
+Contours with a small size beneath a fixed threshold are culled from this list to further sort out \enquote{scene noise} like the numerous objects on the left side of the desk.
+The outlines of these contours are approximated by polygons for which the deviation epsilon is based on the contour's area.
+Once again we sort out polygons with more than seven edges to reduce our set of candidates.
+All contours with a large enough area can be seen in figure~\ref{fig:cont_dect3}. Those with simple enough approximations are colored green.
+We can see that from the complex original scene, only three areas of the image remain.
+However, one potentially interesting area in the foreground is left out and will thusly not be considered in later steps of the pipeline.
+Each selected contour is cropped from the image and will be passed forward to the next step.
+% \subsubsection{Noise Estimation}
 
-\subsubsection{Colorfulness Estimation}
-- Simple measure for estimating colorfulness of an image \cite{hasler2003measuring}. \\
-- We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
+\textbf{Noise Estimation: } \hfill \\
+To determine which of the found contours are likely to contain (textual) information, we first calculate a noise measure.
+We use a simple kernel for fast noise variance estimation proposed by Immerkaer \cite{immerkaer1996fast}.
+The author notes that \enquote{In highly textured images or regions, though,
+the noise estimator perceives thin lines as noise}.
+We utilize this property of the estimator as a criterium for the detection of small, dense text.
+Areas with a low noise value are discarded in this step.
+It is, however, completely plausible that high-noise contours do not contain text.
+The score of the snapshot is multiplied with the noise value, and if the noise threshold is passed, the snapshot is passed on to the next step.
+
+\textbf{Colorfulness Estimation: } \hfill \\
+To further preselect the remaining contours, we estimate the colorfulness of the image regions.
+A fast method for this is proposed by Hasler, meant to be used as an overall colorfulness estimation of a natural scene.~\cite{hasler2003measuring}.
+We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
+Regions with high color variance are therefore not passed forwards to the next step.
+The score is once again multiplied with the colorfulness value.
+In practice, contours with a high amount of noise and a low color variance are good estimates for regions of the image that actually contain text.
 
 \subsection{Communication between phone and server}
 
