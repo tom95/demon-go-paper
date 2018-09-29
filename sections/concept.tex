@@ -2,7 +2,7 @@
 %----------------------------------------------------------------
 % Concept
 %----------------------------------------------------------------
-\section{Privacy Intrusion Through AR and CV Technologies}
+\section{Privacy Intrusion through AR and CV Technologies}
 
 To demonstrate the risk of privacy intrusion of emerging augmented reality and computer vision technologies, we identified three factors that we believe to enable malicious users to abuse these technologies.
 
@@ -14,7 +14,7 @@ Increasing computational power in consumer devices allows these libraries to use
 While currently AR applications are often developed for entertainment purposes or as a feature showcase, one can expect AR technology to become common in more diverse areas, such as information display in professional environments, medical applications, or support of sensory functions.
 % - (factor 3) By necessity, AR applications are granted permission to access the camera input of the mobile device. This opens up a visual window into the immediate and intimate vicinity of the user, often in their homes or work places. \\
 Second, this poses a danger, as, by necessity, AR applications are granted permission to access the camera input of the mobile device.
-With AR applications being used in diverse areas, as outlined in point two, highly sensible information will be made visible to the mobile device and opens up a visual window into the user's immediate and intimate vicinity of the user, often in their homes or work places.\\
+With AR applications being used in diverse areas, as outlined in point two, highly sensible information will be made visible to the mobile device and opens up a visual window into the immediate and intimate vicinity of the user, often in their homes or work places.\\
 % - Additionally, advancements in computer vision increase the computational interpretability of pictures or even extensive near real time analysis of video feeds.
 Third, progress in the area of computer vision increase the computational ability to interpret pictures in machine-readable formats. This goes to the extent that even the real time or near real time analysis of video feeds becomes possible. Otherwise, emerging offers in cloud infrastructure by for example Google offer services specifically designed to quickly and efficiently process image input at scale.
 
@@ -23,7 +23,7 @@ Combined, advancing computer vision allows large scale data mining, while augmen
 Additionally, AR games may even allow manipulating the user into navigating to specific areas that the malicious application considers particularly interesting, by moving important game play elements in those areas and prompting the user in this way to point the camera at specific points of interest.
 
 % - Malicious actor: Could uncover sensitive information that is heavily protected in the digital world.
-As a consequence, a malicious actor aiming to steal data from users could uncover sensitive information that may be heavily protected from access in the real world, but could be immediately revealed by legitimate actors with access to the area, if they use a compromised AR application.
+As a consequence, a malicious actor aiming to steal data from users could uncover sensitive information that may be heavily protected from access in the public world, but could be immediately revealed by legitimate actors with access to the area, if they use a compromised AR application.
 % Possible desirable information could be tax identification numbers, bank account numbers, social security numbers, etc., i.e. anything that can often be found in plain sight on sensitive documents but is well-encrypted in digital representations.
 Information that could be compromised in the setting of a regular consumer game includes all information that is printed out and would otherwise be well protected in a digital setting, such as tax identification numbers, bank account numbers, or social security numbers.
 
@@ -36,8 +36,8 @@ Further, profit driven actors could use the gathered information to gain insight
 
 % However, mere panning over a room's interior does not provide images with a high enough resolution to gather most often fine-printed information.
 Many of these use cases currently require images of very good quality.
-Techniques like optical character recognition (OCR), for example, which enable the automatic processing of captured text, require close-ups shots and sufficient picture clarity.
-With the Demon Go prototype, we demonstrate an approach where the user is lead into providing these necessary close-up shots.
+Techniques like optical character recognition (OCR), for example, which enable the automatic processing of captured text, require close-up shots and sufficient picture clarity.
+With the Demon Go prototype, we demonstrate an approach where the user is led into providing these necessary close-up shots.
 To hide this exploitation from the user, we align the requirements on the camera feed with plausible and engaging game mechanics.
 We specifically designed the prototype in a way that the exploitation aspect remains as well hidden as possible, and appears to merely be using features required for the game to work.
 
@@ -46,21 +46,24 @@ We specifically designed the prototype in a way that the exploitation aspect rem
 
 % Concept
 
+\subsection{The player's objective}
 The game concept is heavily inspired by the book series Bartimäus and the already mentioned globally successful AR game Pokemon GO.
 
 Its main goal for the player is to control as much territory of the augmented world as possible.
 
-Therefore players needs to place public stashes at fixed geo-locations which mark their reign and have a specific range of influence. 
-To defend those stashes against attackers, the player needs to collect demons. The demons are flying around in the augmented world and can be captured by the players. 
-Besides defending stashes demons can also be used to attack other stashes and directly extend the range of influence of the stashes on which they are placed.
+Therefore players need to place public stashes at fixed geo-locations which mark their reign and have a specific range of influence. 
+To defend those stashes against attackers, the player needs to collect demons which are flying around in the augmented world and can be captured by the players. 
 
-Moreover the player gathers energy points (EP) in the game that he can use to summon stronger demons.
+Moreover the player gathers energy points (EP) in the game by releasing their previously caught weaker demons. He can then use the EP to summon stronger demons for a more effective defense.
 
-As the player can only hold a maximal capacity of EP in his \enquote{in-game purse} he needs to place them in stashes where they can be stolen from opponents.
+Besides defending stashes, demons can also be used to attack other stashes and have a direct influence on the radius and the maximum EP capacity of the stashes on which they are placed.
+
+As the player can only hold a maximal capacity of EP in his \enquote{in-game purse} he needs to place them in stashes where they can theoretically be stolen from opponents. 
+Hence the players are motivated to defend their stashes with stronger demons which indirectly forces them to catch more demons in the augmented world.
 
 \begin{figure}
     \includegraphics[width=8cm]{graphics/map.png}
-    \caption{Screenshot of the map with stashes (markers) and defending demons.}
+    \caption{Screenshot of the map with stashes, their areas of influence and their defending demons}
     \label{fig:map}
 \end{figure}
 
@@ -74,41 +77,39 @@ As the player can only hold a maximal capacity of EP in his \enquote{in-game pur
 \subsection{Getting Demons}
 \label{subsec:demons}
 
-- two ways: capturing and summoning
+To defend and attack stashes the player needs to collect demons.
 
-The first way is to find, follow and fight demons that are present in the augmented world and can be seen through a 'magic lense' (AR view in app).
+Therefore the first out of two possible ways is to find, follow and fight demons that are present in the augmented world and can be seen through a 'magic lense' (AR view in app).
 
 To find a demon the player first has to search for flying spheres that represent demons in their hidden form. 
-The idea is that the sphere flies around quickly and changes its direction frequently which gets the player to scan as much of his surrounding area that can already get (pre) analyzed.
-To unleash the demon the player needs to tap the sphere multiple times. 
+The sphere flies around quickly and changes its direction frequently which gets the player to scan as much of his surrounding area that can already get (pre-)analyzed.
+To unleash the demon the player needs to tap (shoot) the sphere multiple times. 
 
 Once the demon emerged from the sphere it is navigating towards points of interests that were derived from the camera stream in the scanning phase.
 To capture the demon the player first needs to get close enough to it which enables him to weaken it by 'casting spells' in form of drawing specific figures on the screen. 
-By getting closer to the demon the player ideally gives the camera a better view and angle onto the earlier detected points of interest which allows a better data analysis. 
-At the same time the virtual demon hides the controversial point of interest underneath it to not arouse suspicion. 
+By getting closer to the demon the player ideally gives the camera a better view and angle onto the earlier detected points of interest which reveals the sensitive data and allows a better data analysis. 
+At the same time the virtual demon hides the controversial point of interest underneath it in order to not arouse any suspicion. 
 
 After multiple successful spell castings the demon is captured and will be added to the player's demon collection. 
 From there it can be used to attack other stashes or to defend own stashes or can be sacrificed in order to receive EP for it.
 
-- for summoning (not implemented) the user needs to be in the area of influence of one of his stashes --> the bigger and stronger the stash, the higher the likelihood of a successful incantation (or a stronger demon)
---> this makes it very likely for the user to place a stash somewhere where he often goes to 
---> assumption: users will defend their real world homes, work places, schools, universities, ... to increase their time to summon demons
+The other conceptual and not yet implemented way to collect demons is to summon them. Therefore the user needs to be in reach of one of his stashes and pays with his EP to start the incantation. Furthermore the likelihood of a successful incantation depends on the reach of the stash and the strength of the defending demons. 
+This makes it very likely that the user places a well defended stash somewhere where he often stays or goes which is likely to be his home, work place, school, university, etc.
+Hence the user will probably disclose more sensitive information as these are rather located at those places than in public spaces.
 
 \subsection{Stashes and EP}
 \label{subsec:stashesandep}
 
-- not possible to "carry" unlimited amount of EP 
-- stashes serve as treasures for EP
+As the user only has a maximal capacity of EP he can carry and strong demons can be expensive he needs to store EP in stashes.
 
-- mark territory of player (circle around stash)
-- can only be placed at current location
-- are visible to all other players 
-- have to be defended against attackers
-- range of influence can be extended by placing demons on them which furthermore defend the stashes against attackers 
-- also the max capacity of EP that the stash can hold increases with the strength of the defending demons
-- user can have an unlimited amount of stashes
+%- mark territory of player (circle around stash)
+Stashes can only be placed at the current location of the user and its reach is visualized by a colored circle on the map (see fig. \ref{fig:map}).
+A player can have an unlimited amount of stashes that are all visible to every other player. 
+%- have to be defended against attackers
+%- range of influence can be extended by placing demons on them which furthermore defend the stashes against attackers 
+%- also the max capacity of EP that the stash can hold increases with the strength of the defending demons
 
-- in the area of influence of one player it's not possible for other players to place their stashes --> hence players are forced to attack hostile stashes to decrease their area of influence (by killing defending demons) or ideally to destroy the whole stash and steal EP placed by the defender
+In the reach of one stash it's not possible to place other stashes - hence players are forced to attack hostile stashes to decrease their area of influence (by defeating the defending demons) or ideally to destroy the whole stash and steal EP placed by the defender.
 
 - forces players to place stashes in the real world 
 - provokes other players to limit their possible range of influence and steal the stashed EPs
@@ -165,22 +166,44 @@ From there it can be used to attack other stashes or to defend own stashes or ca
 \subsection{Collecting Data}
 \label{subsec:collectingdata}
 
+The capturing of the demon consists of two phases.
+The first phase, which is the scanning phase, will force the user to move the camera the camera a lot because the demon is flying randomly through the room.
+While the users try the shoot the demon the camera frames are processed in the background and rated by specific metrics.
+
 % Welche Daten sammeln wir dabei? → “Dämon als Datenpunkt”
-- capturing a demon: two phases
-- phase 1: scanning, demon is flying around randomly while the captured camera frames are processed
-- camera frames are rated by specific metrics. goal is to identify interesting points (e.g. text, brands, faces) to send the user to -> best frames are PoI
-- phase 2: capturing, demon flies to PoI to force the user to point camera at it and "cast the spell" (i.e. hold phone relatively even while pointing at the PoI and with half of the view covered by pattern/finger)
-- more detailed processing of captured frames
-(- also geolocation of user can be captured when he places stashes/moves around to attack others)
+%- capturing a demon: two phases
+%- phase 1: scanning, demon is flying around randomly while the captured camera frames are processed
+%- camera frames are rated by specific metrics. goal is to identify interesting points (e.g. text, brands, faces) to send the user to -> best frames are PoI
+%- phase 2: capturing, demon flies to PoI to force the user to point camera at it and "cast the spell" (i.e. hold phone relatively even while pointing at the PoI and with half of the view covered by pattern/finger)
+%- more detailed processing of captured frames
+%(- also geolocation of user can be captured when he places stashes/moves around to attack others)
 
 % Berechtigungen ergeben Sinn
-- principle to not fabricate the threat too much:
-- all permissions which the user has to grant are used in the game and their use is easily comprehensible for the user
- - Camera: AR
- - Location: place and attack stashes available at real world locations
- - Internet: Needed to sync with other players, get information about demons
+For success of the data collection it is crucial that the users do not become suspicious and see the app as a potential threat to their privacy.
+Therefore every permission which has to be granted is reflected in the game and it is obvious why they are needed for a properly functioning game:
+\begin{itemize}
+    \item The camera access is needed to ensure that ARCore is working and is able and demons can be projected into the real world.
+    \item The geolocation of the users is needed to track their positions in the world and ensure that they are only able to place, attack and defend stashes which are close to them.
+    \item Internet access is also required because the information about the stashes, players and demons needs to be synced between different players.
+\end{itemize}
+
+%- principle to not fabricate the threat too much:
+%- all permissions which the user has to grant are used in the game and their use is easily comprehensible for the user
+% - Camera: AR
+% - Location: place and attack stashes available at real world locations
+% - Internet: Needed to sync with other players, get information about demons
  
 % Möglichst geringe Ressourcennutzung
-- not possible to stream all frames to server for further analysis -> would use too much bandwidth
-- also processing of every single frame on the server would take too much time 
-- preprocess frames and rate them -> only send best frames to server
+
+When it comes to Internet usage it is important reduce the keep the necessary resources as low as possible. 
+Thus it is not feasible to stream all the captured frames directly to the server because when captured with a resolution of 1920x1080 px they will usually be larger than a couple hundred kilobytes, if not even multiple megabytes.
+Especially when users are using are not connected to the Internet through a wireless network they will probably get suspicious if the game will use a major amount of their data allowance.
+At least it would be unusual that an app would need that much band width while claiming that it only sync necessary game information between players.\\
+Even if we could assume that all players have enough data allowance to constantly stream all the data there would be two limitations left.
+First of all enough bandwidth would have to be available every time when users try to catch demons which could be a problem in regions where no fast mobile internet is available.
+Secondly the server wouldn't be able to process all the frames because the more complex algorithms already take a couple of seconds to process a single frame. \\
+The solution is to preprocess and preselect them based on a scoring mechanism, which will guarantee that only the best frames will be sent to the server.
+
+%- not possible to stream all frames to server for further analysis -> would use too much bandwidth
+%- also processing of every single frame on the server would take too much time 
+%- preprocess frames and rate them -> only send best frames to server

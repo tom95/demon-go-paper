@@ -3,7 +3,8 @@
 % comment by Daniel: This section could be used to provide information on the methodology, general issues, selection process of the upcoming issues (sub sections) or similar...
 
 In this section, we will first provide an evaluation of the AR game play components.
-% TODO write about what we do secondly.
+Secondly we will talk about the movements of the demons in the game before evaluating the used OCR framework.
+Finally we will provide a short case study to evaluate the implemented game in a real-world environment.
 
 % AR-Komponente (Bewegung des Dämons, Werden die PoI’s wiedergefunden, etc.)
 % - biggest challenge: ensuring that tracking points at PoI remain consistent as user approaches; old visual context is lost as they focus e.g. on a single part of the desktop --> might cause ARCore to recalc coordinate system (could have been nice to pause allocation of tracking points and rely on accelerometer, but ARCore does not support this)
@@ -20,7 +21,6 @@ At the time of writing, ARCore does not expose an option to \enquote{freeze} the
 This functionality would have likely remedied our issues, if we froze the coordinate system when switching to the capturing phase, where stable positions are essential, and relied on the phone's accelerometer and picture data to move the camera in the existing virtual space.
 ARCore did not expose sufficient access to the lower level system for us to try this approach by ourselves, so we will either have to wait for its developers to add this functionality or use and modify an open source augmented reality framework to solve this specific use case.
 
-% FIXME: to be tested further:
 % - by defining anchors on the relevant tracking points, ARCore will ensure most of the time that objects remain within reach -- timeout and fallback to showing spell even though user is not close enough otherwise
 As a workaround to this issue, we make use of the ARCore anchors, which will update and move around the coordinate system to try and make up for changes to the coordinate system's origin or scale.
 This helped most of the time to ensure that the demon will at least be within the activation distance for the capturing phase, but it still appeared to coast around the spot.
@@ -44,22 +44,48 @@ Our concept of exploring the room size by encouraging the user to turn frequentl
 As the room quickly grows bigger, this may not be as much of an issue, however it may make sense to add a better waypoint system than simply selecting random points in the known space.
 This may also help to make the demon feel like a more believable creature.
 
-\subsection{User Experience}
-% FIXME: to be evaluated if that applies to anyone else but me:
-- handling of phone is tricky: most users held phone in right hand, shot w/ left hand in scanning phase. switch hands when entering capturing phase for drawing spells --> messes up coordinate system as phone points to floor temporarily
+\subsection{OCR}
+\emph{Tesseract}, the used OCR framework, is able to produce great results when used in scenarios where the graphical representation of the text has a high resolution, is not distorted and offers high contrast.
+An ideal example would e.g. be a scan of a non-handwritten page of a book. \\
+This immediately shows that \emph{Tesseract} is probably not the best framework to use in a real world scenario where we have a lot of sparse text which is likely distorted because of wrong focus and fast camera movements. 
+Of course by preprocessing we can filter out frames which are too blurry, deskew and rotate distorted text as well as convert image to black and white in order to generate higher contrast. 
+However all those operations are not producing optimal solutions and can only improve the results slightly. 
+Additionally the issues of low resolution and unusual fonts let alone handwriting are impossible to be fully mitigated. 
 
-% TODO
-Potentially case study (instead of user experience)
+\subsection{Case Studies}
+
+\begin{figure}%
+    \centering
+    \subfloat[Full view]{{\includegraphics[width=4cm]{graphics/sticker-full.jpg}}}%
+    \qquad
+    \subfloat[Extracted part]{{\includegraphics[width=3cm]{graphics/sticker-closeup.jpg}}}%
+    \caption{The full view of the analyzed frame and the extracted part that was used for further analysis.}%
+    \label{fig:example-frame}%
+\end{figure}
+
+We tried the capturing aspect with four different people, who had not seen the game before. They received three sentences of basic instructions (red ball, needs to be shot three times; will transform into a demon, to which you walk close by; then draw the pattern that appears to win the game). All four managed to complete a game without further instructions and played a total of eleven runs, two of which had to be aborted because the demon left the clipping volume. The game play took place in a large living room of around 6x8 meters squared.
+
+The most notable problem in terms of gameplay was the loss of tracking information, when the testers scanned the room rapidly and moved the camera to the plain white ceiling or quickly moved towards a part of the plain white wall. Best results were obtained when the testers held the camera tilted towards the floor for a longer while. This gave ARCore the opportunity to get a set of solid base points that it could find again when the camera moved nearby. Otherwise, when holding the camera at eye level or towards the ceiling, a larger area had to be analyzed and often led to points erroneously being detected as too far away.
+
+\begin{figure}
+    \includegraphics[height=8cm]{graphics/fridge.png}
+    \caption{Part of the fridge door containing the text snippets that were found during one of the case study game play sessions. Marked with red rectangles are the areas that were recognized to contain text and analyzed by the OCR.}
+    \label{fig:fridge}
+\end{figure}
+
+Four potential points of interest were placed in the room. See figure \ref{fig:example-frame} for an example. During the eleven runs, the demon specifically targeted points of interest three times (the fridge in figure \ref{fig:fridge}, the sticker in figure \ref{fig:example-frame} and a pinboard on the wall). 
+Twelve snippets of text could be recovered from pictures taken during the sessions, with some information successfully converted by the OCR, for example the URL \enquote{healthfix.com.au} turned into the string \enquote{ealth/ix.com}, see figure \ref{fig:fridge}.
+
+These results reflect real usage by players that do not aim to help the data exploitation system.
+They had no knowledge of this component and did not take particular notice of the planted points of interest.
+In another test in a smaller room and a player that knew about the data exploitation aspect and that moving the camera along areas of low contrast should be avoided, results turned out a lot more positive, with the demon choosing points of interest at least once in three points, with the other two still being chosen randomly or at a place that did not contain textual information.
+This also allowed recovering larger pieces of text, even though the quality of the translated strings is comparable, with letters being replaced by symbols and letters missing at the start or end of the string.
+Results as observed in this exploit-oriented usage are comparable to those demonstrated in section \ref{sec:implementation-data-analysis}.
 
 % Erkennung der Points of Interest
 - Blurriness: Laplacian is not too precise, e.g. when using shallow focus, some regions are completely focused whereas some are totally blurry
 --> will result in low blurriness value
 
 % Brand-Detection
-
-% Textanalyse mit OCR
-- Wo wird im Bild Text erkannt?
-- Kann dieser Text interpretiert werden, wenn ja, wie gut?
-- Was sind Probleme? (Schriftart, Blurriness, distortion)
 
 % Scalability

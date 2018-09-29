@@ -6,6 +6,7 @@
 \usepackage{algpseudocode}
 \usepackage{url}
 \usepackage{csquotes}
+\usepackage{subfig}
 
 \title{Demonstration of Game-Based Object Detection}
 \author{Tom Beckmann\\ Digital Engineering Faculty, Hasso Plattner Institute \textbar{} University of Potsdam}
@@ -98,23 +99,24 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 \input{sections/implementation-arcore.tex}
 
 \section{Data Analysis Implementation}
+\label{sec:implementation-data-analysis}
 \begin{figure*}
     \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
     \caption{Pipeline Scanning Phase}
     \label{fig:prozess}
 \end{figure*}
-\begin{figure*}
+%\begin{figure*}
     % \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
-    \caption{Pipeline Capturing(Detail) Phase}
-    \label{fig:prozess}
-\end{figure*}
+    %\caption{Pipeline Capturing(Detail) Phase}
+    %\label{fig:prozess}
+%\end{figure*}
 
 % FIXME intro to OpenCV, features, usages?
-- pipeline which processes every frame (captured by camera while capturing demons) on phone
-- preselect frames which are sent to server
-- only best should get sent
-- pipeline consists of independent steps which could be ordered in any order -> same interface
-- frames are wrapped in \textit{Snapshots} (ensures that the same object is passed between steps)
+
+The major part of the data analysis is done in the scanning phase by the pipeline which can be seen in figure \ref{fig:prozess}.
+This pipeline processes every frame which is captured by the camera with the intent to minimize the traffic between the client and the server through sending only the best frames.
+% The individual steps all provide the same interface and could therefore easily be ordered differently or reused at another place in the pipeline.
+% To ensure that the same type of objects is passed between the steps a camera frame will be wrapped in a \emph{Snapshot} object together with a score which represents the quality of it.
 
 \subsection{Snapshots / Communication with Pipeline}
 % FIXME in parts dupl with ARCore.Snapshots above -- might be fine if we focus on the pipeline-specific aspects
@@ -124,29 +126,29 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 - AR-Snapshots: additional fields (points in room and viewProjectionMatrix)
 
 \subsection{Steps}
-- contain list of following steps (in next)
-- able to track time of execution
-- .start(snap) -> .process(snap) -> .output(snap) (starts all steps in next with processed snapshots)
 
-- special case: \textit{StepWithQueue}
-- additional priority queue based on snapshot score
-- getBestAndClear (angleChange) and getBest (sendingStep)
-- used in angleChange and sendingStep where the only the best frame should be handled/should be handled first
+The \emph{step} object is the abstract representation of each possible step of the pipeline and therefore each implementation provides the same interface to ensure interchangeability and reusablity.
+After a step is executed via calling the \emph{start} function the \emph{process} method is called and will, as the name implies, do the actual processing of a frame.
+Afterwards the \emph{output} method will start all its following steps with the possibly new \emph{snapshot}.\\
+A special case of a step is the \emph{StepWithQueue} class where each snapshot is put into a priority queue based on its score.
+This is useful in cases where only the best frame should be processed or where it should be processed first.
 
 % Daten-Analyse-Pipeline
  % Finden von PoI
  % Capturing und Processing
  
- \subsubsection{Blur Estimation}
- The Blur Estimation is needed to preselect snapshots whose quality is sufficient for further processing. 
+ %\subsubsection{Blur Estimation}
+ The \emph{BlurEstimation} step represents the first step of the pipeline and is needed to preselect snapshots whose quality is sufficient for further processing. 
  The frame of the snapshot, which is processed, will be converted to a grayscale image before the Laplace operator is applied to it.
  Afterwards the variance of the new image will be calculated and will indicate the blurriness where a higher variance will represent a sharper image.
  The idea behind this approach is that a blurry image (because of its nature) is less likely to have a lot of clear edges. 
  Therefore the variance of the Laplace operator, which is used to detect edges, will be lower than in a sharp picture. 
  
- \subsubsection{AngleChange}
+ The \emph{AngleChange} step is a subclass of \emph{StepWithQueue} and thus won't process each snapshot individually but rather place them in a priority queue.
+ Only when the phone has been moved more than 10cm in any direction or has been rotated by more than 5 degrees the best snapshot will be passed to the next steps.
+ Eventually the queue will be cleared of all the remaining snapshots.
  
-\subsubsection{Brand/Pattern Recognition}
+%\subsubsection{Brand/Pattern Recognition}
 - Utilizes keypoint detection and feature descriptor matching to match recognizable patterns like brand logos and letterings \\
 - The ORB (Oriented FAST and Rotated BRIEF) technique is used \cite{rublee2011orb} \\
 - Computationally expensive step is keypoint calculation for frame.\\
@@ -154,41 +156,55 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 - 'cheaper' than neural network, especially on mobile devices\\
 - much better results than template matching
 
-\subsubsection{Contour Detection}
+%\subsubsection{Contour Detection}
 - Gaussian Blur -> bilateral filter -> Canny edge detection -> find Contours and cull by minimum size and maximal edges.\\
 - Found contours are cropped and passed to next steps for likelihood of text estimation
 
-\subsubsection{Noise Estimation}
+%\subsubsection{Noise Estimation}
 - A simple kernel for fast noise estimation for which the authors note \enquote{In textured images or regions, though, the noise estimator perceives thin lines as noise.} \cite{immerkaer1996fast}. \\
 - We utilize this property to detect probable regions with dense text.
 
-\subsubsection{Colorfulness Estimation}
+%\subsubsection{Colorfulness Estimation}
 - Simple measure for estimating colorfulness of an image \cite{hasler2003measuring}. \\
 - We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
 
 \subsection{Communication between phone and server}
 
 After a snapshot was processed in the pipeline it is added to the priority queue of the sending step where all snapshots are ordered by their calculated score.
-The transmission itself is handled by \textit{Volley} a fast Android networking library.
+The transmission itself is handled by \emph{Volley} a fast Android networking library\footnote{https://github.com/google/volley}.
 Every 0.5s a POST-request will be prepared including the base64 encoded frame of the best snapshot in the priority queue and the id of the player. 
-After being added to the request queue of Volley, the request will then be sent to the server as soon as possible.
+After being added to the request queue of Volley, the request will then be sent to the \emph{detect\_text} endpoint of the server as soon as possible.
 
 Additionally every 100th frame, which enters the pipeline will be added to the queue of the sending step directly after passing the blur estimation and angle change step.
 This ensures that once in a while a data sent to the server if no other snapshot has a sufficient score after passing the other steps.
 The score generation, however, guarantees that this very rarely the case.
 
-% Direct sending after brand detection
+In two special cases requests are directly queued into Volley's request queue and avoid being processed in the sending step.
+This is the case if a brand is successfully detected in the brand detection step or when the user successfully casts a spell in the demon capturing phase. 
+In the first case only the user id and the detected brand are transmitted as string whereas in the second one the full camera frame is transmitted alongside the user id.
 
 \subsection{Server-side Analysis}
 
-- Flask/Flask-SocketIO server with sqllite db
-- decodes received images and writes them to the disk (for now)
-- detects where possible text is written on saved image
-- crops image for every box \& saves it
-- analyses rotaion of text, removes rotation and runs pytesseract on it 
-- saves user\_id, filename of cropped img, analysed text, rotation, timestamp and confidence of analysis (given by pytesseract) to db
-- also informs the frontend (?) about added and processed images via SocketIO
+The backend is based on the Python framework \emph{Flask}\footnote{http://flask.pocoo.org/} and provides multiples endpoints where it accepts data sent from the Android Clients.
 
+Frames that were processed in the scanning pipeline will be sent to the \emph{detect\_text} endpoint where a text detection will be applied.
+A frame which passes the pipeline is likely to include text but to guarantee that this is the case and not only random noise was found, a text detection is applied. 
+The \emph{EAST scene text detection} proposed by \cite{Zhou2017EASTAE} determines quadrilateral shapes around possible text areas by applying a neural network to the supplied frame.
+If possible text is found the server calculates the center of all the found shapes and sends a response with the coordinates back to the client where this can be translated into a 3 dimensional point of interest.
+
+If a close-up of a point of interest is taken it will be transmitted via the \emph{ocr} route. 
+This will trigger a more precise analysis of the received frame involving the \emph{EAST scene text detection} and \emph{pytesseract}\footnote{https://github.com/madmaze/pytesseract}, which is a Python wrapper for Google's OCR framework \emph{Tesseract}\footnote{https://github.com/tesseract-ocr/tesseract}.
+The text detection is applied to the frame and the resulting text boxes will be processed individually in the following steps.
+First, the image is rotated to ensured that the text is aligned with the borders of the image.
+Subsequently the image is converted to grayscale as well as eroded and dilated in order to remove potential noise.
+Finally a bilateral filter is applied to receive an image which is only black and white because an OCR algorithm will work best under those circumstances.
+Finally, said OCR algorithm which is provided by \emph{pytesseract} will be applied to the image.
+Because of the preprocessing it tries to interpret the given image as a single line of text which is either English or German. 
+The resulting string will be saved to an SQLite\footnote{https://www.sqlite.org/index.html} database together with the user id of the Android client, the filename of the cropped text box and a timestamp.
+
+The third and last endpoint is called \emph{brand} and is used to store the user id, timestamp and the name of a recognized brand in the database.
+
+% Frontend?
 
 %----------------------------------------------------------------
 % Evaluation
@@ -199,14 +215,7 @@ The score generation, however, guarantees that this very rarely the case.
 %----------------------------------------------------------------
 % Conclusion
 %----------------------------------------------------------------
-\section{Conclusion}
-\label{sec:conclusion}
-
-% Future Work
-- Move away from contour-based region of interest recognition and aggregate 
-- z.B. weitere Daten sammeln und komplexere Nutzerprofile anlegen
-- Data Analytics auf den gesammelten Infos
-
+\input{sections/conclusion.tex}
 %----------------------------------------------------------------
 % Sources
 %----------------------------------------------------------------
