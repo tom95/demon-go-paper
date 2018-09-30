@@ -3,7 +3,7 @@
 % comment by Daniel: This section could be used to provide information on the methodology, general issues, selection process of the upcoming issues (subsections) or similar...
 
 In this section, we will first provide an evaluation of the AR gameplay components.
-Secondly, we will talk about the movements of the demons in the game before evaluating the used OCR framework.
+Secondly, we will talk about the movements of the demons in the game before evaluating the data analytics pipeline and the used OCR framework.
 Finally, we will provide a short case study to evaluate the implemented game in a real-world environment.
 
 % AR-Komponente (Bewegung des Dämons, Werden die PoI’s wiedergefunden, etc.)
@@ -29,7 +29,8 @@ To not block the game altogether when the demon attaches to a point with incorre
 \subsection{Demon Movement}
 
 % Comment from daniel: I would like to see lots of images here, e.g., show a stupid positioning due to errors, or how does good tracking accuracy compare to a bad one by example
-\begin{figure}
+\begin{figure}[ht]
+    \centering
     \includegraphics[height=8cm]{graphics/demon-wrong-depth.jpg}
     \caption{The demon appears to be floating inside the wall. The debug output in the console reported a distance from the camera of about 7 meters while this frame was captured. The distance from the camera to the wall is about 2 meters.}
     \label{fig:demon_wrong_depth}
@@ -43,7 +44,17 @@ This is mainly because the quality of the tracking points even for our room size
 Our concept of exploring the room size by encouraging the user to turn frequently at the start of the session, by making the room very small, may lead to some confusion as the demon appears to travel through impossible ways, for example through the user.
 As the room quickly grows bigger, this may not be as much of an issue, however, it may make sense to add a better waypoint system than simply selecting random points in the known space.
 This may also help to make the demon feel like a more believable creature.
-\subsection{Point of Interest Generation}
+
+\subsection{Mobile Client Analysis}
+The current concept and implementation of the data analysis pipeline does not recognize potential information in every scenario.
+Firstly, the blurriness estimation is not very precise in some cases. For example, when using a shallow focus, some regions are completely focused, while others are very blurry. This will result in a low blurriness estimation, even though not many regions of the frame are usable.
+Also, the detection of regions with potential information relies heavily on the contour detection.
+This is not an ideal approach, as regions are disregarded if multiple contours overlap or if they are not clearly discernible from the scene background.
+An example is the flyer in the foreground of \autoref{fig:cont_dect}. As we can see in \autoref{fig:cont_dect2}, the result of the canny filter allows no clear separation of the content due to the low contrast with the background.
+Also, the current heuristic for determining the likelihood of textual information, the combination of noise and colorfulness estimation, is not able to differentiate between low-color, high-noise regions in general and actual text in particular. In \autoref{fig:estimators}, we can see that all three found contours have rather similar estimations. Even if the letter is still a bit more noisy than the other frames, all three contours would be good candidates.
+Since we therefore employed an additional text detection step with support from the server, very small text could potentially be missed.
+It might be advisable to move away from the contour-based approach and instead aggregate scores for small quadrants of the real-world coordinate system.
+This would eliminate the additional round trip to the server, while presumably enabling the detection of regions that the EAST detection misses.
 
 \subsection{OCR}
 \emph{Tesseract}, the used OCR framework, is able to produce great results when used in scenarios where the graphical representation of the text has a high resolution, is not distorted and offers high contrast.
@@ -69,23 +80,21 @@ We tried the capturing aspect with four different people, who had not seen the g
 The most notable problem in terms of gameplay was the loss of tracking information when the testers scanned the room rapidly and moved the camera to the plain white ceiling or quickly moved towards a part of the plain white wall. Best results were obtained when the testers held the camera tilted towards the floor for a longer while. This gave ARCore the opportunity to get a set of solid base points that it could find again when the camera moved nearby. Otherwise, when holding the camera at eye level or towards the ceiling, a larger area had to be analyzed and often led to points erroneously being detected as too far away.
 
 \begin{figure}
+    \centering
     \includegraphics[height=8cm]{graphics/fridge.png}
     \caption{Part of the fridge door containing the text snippets that were found during one of the case study gameplay sessions. Marked with red rectangles are the areas that were recognized to contain text and analyzed by the OCR.}
     \label{fig:fridge}
 \end{figure}
 
-Four potential points of interest were placed in the room. See figure \ref{fig:example-frame} for an example. During the eleven runs, the demon specifically targeted points of interest three times (the fridge in figure \ref{fig:fridge}, the sticker in figure \ref{fig:example-frame} and a pinboard on the wall). 
-Twelve snippets of text could be recovered from pictures taken during the sessions, with some information successfully converted by the OCR, for example, the URL \enquote{healthfix.com.au} turned into the string \enquote{ealth/ix.com}, see figure \ref{fig:fridge}.
+Four potential points of interest were placed in the room. See \autoref{fig:example-frame} for an example. During the eleven runs, the demon specifically targeted points of interest three times (the fridge in \autoref{fig:fridge}, the sticker in \autoref{fig:example-frame} and a pinboard on the wall). 
+Twelve snippets of text could be recovered from pictures taken during the sessions, with some information successfully converted by the OCR, for example, the URL \enquote{healthfix.com.au} turned into the string \enquote{ealth/ix.com}, see \autoref{fig:fridge}.
 
 These results reflect real usage by players that do not aim to help the data exploitation system.
 They had no knowledge of this component and did not take particular notice of the planted points of interest.
 In another test in a smaller room and a player that knew about the data exploitation aspect and that moving the camera along areas of low contrast should be avoided, results turned out a lot more positive, with the demon choosing points of interest at least once in three points, with the other two still being chosen randomly or at a place that did not contain textual information.
 This also allowed recovering larger pieces of text, even though the quality of the translated strings is comparable, with letters being replaced by symbols and letters missing at the start or end of the string.
-Results, as observed in this exploit-oriented usage, are comparable to those demonstrated in section \ref{sec:implementation-data-analysis}.
+Results, as observed in this exploit-oriented usage, are comparable to those demonstrated in \autoref{sec:implementation-data-analysis}.
 
-% Erkennung der Points of Interest
-- Blurriness: Laplacian is not too precise, e.g. when using shallow focus, some regions are completely focused whereas some are totally blurry
---> will result in low blurriness value
 
 % Brand-Detection
 

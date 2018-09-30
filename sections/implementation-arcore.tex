@@ -1,14 +1,15 @@
+\subsection{ARCore}
 % - ARCore: definition, scope of the library, other applications (FIXME: move to a background section?)
 ARCore is an augmented reality framework provided by Google.
-The project's roots began in a prototype framework called \enquote{Project Tango} in 2014 and had its first proper release in March 2018. \cite{ArsARCore}
-ARCore is available on various platforms, including Android, iOS and the Unity Game Engine. \cite{ARCore}
+The project's roots began in a prototype framework called \enquote{Project Tango} in 2014 and had its first proper release in March 2018~\cite{ArsARCore}.
+ARCore is available on various platforms, including Android, iOS and the Unity Game Engine~\cite{ARCore}.
 
 % - Concepts: session w/ tracking info, anchors, plane detection --> focused on getting a stable "game board"
 The core of ARCore is formed by a session which holds the features needed to track the movement of the user's phone as they move the device through three-dimensional space.
 ARCore will continuously select tracking points based on the images from the camera and compute the delta to points it found previously.
 Based on a set of these points, its main task is to detect and maintain stable planes that can act as a game board for virtual objects.
-It is then possible to register "anchors" with the session on the current location of any tracking point or any point on a detected plane.
-The position of these anchors will then be updated in the virtual space as ARCore's understanding of the real space changes. \cite{ARCoreConcepts}
+It is then possible to register \emph{anchors} with the session on the current location of any tracking point or any point on a detected plane.
+The position of these anchors will then be updated in the virtual space as ARCore's understanding of the real space changes~\cite{ARCoreConcepts}.
 
 % - our use: getting an idea about the room's dimensions, moving objects in virtual scene believably relative to phone's movement
 For Demon GO, we aimed to have a virtual demon fly through the physical space the player is currently in.
@@ -25,26 +26,30 @@ We limit the maximum extent of the space relative to the origin to keep the demo
 
 % - problems w/ room size: abusing tracking points might include outliers that artificially extend the room --> makes game elements inaccessible; fast movement may reduce quality
 Two issues arose from this approach: first, tracking points may include outliers that artificially extend the room size.
-This will have the most undesired consequence of game elements appearing to penetrate walls while providing X-ray vision to the user and put them effectively out of reach for any user interactions. An example of this can be seen in section \ref{sec:evaluation} in figure \ref{fig:demon_wrong_depth}.
+This will have the most undesired consequence of game elements appearing to penetrate walls while providing X-ray vision to the user and put them effectively out of reach for any user interactions. An example of this can be seen in \autoref{sec:evaluation} in  \autoref{fig:demon_wrong_depth}.
 Second, the fact that the demon moves quickly in small spaces initially not only encourages turning but specifically may prompt players to turn quickly.
 The quick movement, however, reduces the quality of the camera images and makes it harder for ARCore to compute the correct delta movement of the virtual camera, which in turn also reduces the quality of the understanding of the room's size as it is provided to us by ARCore.
 
 To reduce the impact on the gameplay of this issue, we stopped relying on the room dimensions and instead started using only locations where we knew that ARCore had found high-quality image features.
 The algorithm works as follows: We define four points in all directions around the user in a plus-like shape, all of them 30 meters away and with the lowest possible confidence, which we designate as the \emph{best points}.
-In each frame, we get the tracking point with the highest reported confidence, as reported by ARCore, and remember it as our \emphcandidate point.
-We then find the best point closest to our candidate and replace the current best, if the candidate's confidence is higher.
-When the points are requested by the pipeline, we will first try to fill up points using our best points, if their confidence is higher than a threshold.
-Otherwise we, again, fall back to using random points.
-Using this method, we managed to get the demon to very stable positions most of the time, while still ensuring that it will not always be in the same corner of the room, where a lot of high-confidence points were found, as those will keep only replacing their closest best and not affect the other three.
+In each frame, we get the tracking point with the highest reported confidence, as reported by ARCore, and remember it as our \emph{candidate point}.
+We then find the point among our best points closest to our candidate point and replace the current best point if the candidate's confidence is higher.
+When we move to the capturing phase and did not get enough points of interest from our data exploitation subsystem, we will first try to fill up points using our best points if their confidence is higher than a threshold.
+Otherwise we, again, fall back to using random points in the room box.
+Using this method, we managed to get the demon to very stable positions most of the time, since we only choose points that ARCore was able to identify with high confidence.
+If we naively chose the four highest confidence points, we will likely end up picking points in the same corner of the room because the confidence typically increases significantly for an entire area if the camera points to it long enough.
+Instead, we choose points that are further apart, as candidate points} will only replace their closest best point and not affect the other three.
 
 \subsection{Snapshots}
+\label{sec:snapshots}
 % - every frame is distilled into a "Snapshot" containing pixel data, all tracking points, view-proj-matrices. pixel data is passed on to pipeline
 The data exploitation subsystem and the AR subsystem only communicate for a single interaction: the AR subsystem provides frames in what we call \emph{snapshots} and the data exploitation subsystem eventually hands back points of interest for the demon to visit based on these snapshots.
 
 We distill every frame provided by ARCore to a snapshot.
-Snapshots contain the pixel data, typically at a resolution of 1080 by 1920 pixels, the position in virtual space of all tracking points currently in the ARCore session and the current view and projection matrices of the virtual camera. See figure \ref{fig:snapshot_data} for a Visualization.
+Snapshots contain the pixel data, typically at a resolution of 1080 by 1920 pixels, the position in virtual space of all tracking points currently in the ARCore session and the current view and projection matrices of the virtual camera. See  \autoref{fig:snapshot_data} for a Visualization.
 
 \begin{figure}
+    \centering
     \includegraphics[height=8cm]{graphics/snapshot-points.jpg}
     \caption{Visualization of the information saved in a snapshot. Visible are the pixel data of the image and the subset of tracking points that are saved, symbolized by the cubes. Red cubes report a low confidence, green cubes a high confidence. The confidence information is currently not persisted in the snapshots, but useful for debugging.}
     \label{fig:snapshot_data}

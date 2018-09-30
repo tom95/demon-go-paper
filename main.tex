@@ -4,13 +4,13 @@
 \usepackage[utf8]{inputenc}
 \usepackage[ruled]{algorithm}
 \usepackage{algpseudocode}
-\usepackage{url}
+\usepackage[hyphens]{url}
 \usepackage{csquotes}
 \usepackage{subcaption}
-\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
+\usepackage{hyperref}
 
-\usepackage[backend=biber,style=authoryear]{biblatex}
-\addbibresource{foo-paper.bib}
+%\usepackage[backend=biber,style=authoryear, citestyle=authoryear]{biblatex}
+%\addbibresource{foo-paper.bib}
 
 \title{Demonstration of Game-Based Object Detection}
 \author{
@@ -43,18 +43,16 @@
 % Zusammenfassung
 %----------------------------------------------------------------
 \begin{abstract}
+With the emergence of easy-to-use AR frameworks and increasing  capabilities of modern smartphones, the potential for automated analysis of the user's camera feed arises.
+However, malicious actors could employ such analyses for illicit surveillance or unethical profiling use cases.
+We propose a showcase application that demonstrates two of these use cases. In the context of an AR game, we scan the user's perimeter for brand logos, and try to lead the player into providing close-up shots of potentially sensitive information.
+Even though the app is prototypical, through it one can foresee the severe potential for misuse of soon-to-be widespread AR applications.
 \end{abstract}
 
 \copyrightspace % Erzeugt den Hinweis auf die Veranstaltung links unten
 \input{sections/introduction.tex}
 %\input{context.tex}
 
-%----------------------------------------------------------------
-% Related Work
-%----------------------------------------------------------------
-\section{Related Work}
-\label{sec:related_work}
-Related projects/Work
 
 % Wie analysieren wir diese?
 \input{sections/concept.tex}
@@ -74,34 +72,34 @@ We will first describe how the advanced gameplay elements for player vs player i
 Snapshots from the augmented reality component form the bridge between the game and the exploitation subsystems.
 The exploitation subsystem consists of a lightweight image processing pipeline on the player's phone and a server component for heavier processing.
 
-\subsection{Map View}
-- using MapBox to display an interactive map of the augmented world with markers at the positions of stashes (different colors for own and hostile stashes) with their perimeter/range of influence
-- for own stashes the user also sees icons for every demon he placed to defend the stash 
+\subsection{Handling and Displaying the Game State}
 
-- markers are pinned by geo-location on the map
+Demon GO is using the live locatition platform Mapbox to display an interactive map of the augmented world with markers at the geo-locations of stashes with their range of influence.
+For own stashes the user also sees icons representing every demon he placed to defend the stash implemented as different map layers that each contain the corresponding demon collection placed on a stash.
 
-\subsection{Storing and Syncing Stash Data}
-- need to easily sync the current game state (players, stashes, demons) across multiple clients on different devices
+%\subsection{Storing and Syncing Stash Data}
+To allow a multiplayer live interaction it was necessary to easily sync the current game state (players, stashes, demons) across multiple clients on different devices. 
+Therefore we decided to use the document-based NoSQL-database Google Firestore, Google's current flagship database for mobile app development, which offers easy setup, cloud hosting and uncomplicated state syncing across clients.
 
-- using document-based NoSQL-database Google Firestore (cloud hosting, synced state across clients, easy setup) --> current flagship database of Google for mobile app development
+The database consists of three document collections that  documents are saved in the following hierarchy: for every player id --> stashes/null stash --> demons for stash (everything indexed by id)
 
-- document hierarchy: player id --> stashes/null stash --> demons for stash (everything indexed by id)
+The app implements change listeners for the collections of stashes and demons and depending on what type of change event happened either only the updated stashes or also their defending demon markers on the map are redrawn.
+Both collections get updated after every fight and every placement of a demon onto a stash.
+Furthermore a stash gets updated when the user deposits EP into or withdraws EP from it.
+As we currently only have few stashes we listen for changes on every stash but for an upcoming version we could filter the change listeners on nearby stashes using built-in Firestore filters.
 
-- App implements change listeners for the collections of stashes and demons --> depending on what type of event happened stash/demon markers on the map (ideally only nearby) need to be redrawn
---> updated after every fight and every placement of a demon onto a stash
-
-- demons that the player didn't place at a stash are saved in the player's "null-stash" which is not saved in the collection of stashes (as it does not need to be synced with the other players)
-- updated when new demon was summoned or captured and after every fight in which the attacking demon lost health points
+Demons that the player didn't place at a stash are saved in the player's \emph{null-stash} which is saved in the player's collection instead of the collection of stashes as it does not need to be synced with the other players.
+The \emph{null-stash} is only updated when a new demon was summoned or captured and after every fight in which the attacking demon lost HP.
 
 \subsection{Demon Fights}
 
-- the current implementation is a simulation that follows a round-based approach. In every round the attacking demon assaults one defending demon and afterwards gets assaulted by every defending demon sequentially. Thereby both the order in which the defenders are attacked by the attacker and the order in which the defenders counter-attack the attacking demon are shuffled once in advance of the fight. 
+Demon fights are currently implemented as a simulation that follows a round-based approach. In every round the attacking demon assaults one defending demon and afterwards gets assaulted by every defending demon sequentially. 
+Therefore both the order in which the defenders are attacked by the attacker and the order in which the defenders counter-attack the attacking demon are shuffled once in advance of the fight. 
+This makes the fight more unpredictable and harder for the attacker to guess which demons he might eliminate. After a fight both users are informed about the result and the HP of the surviving demons are updated in the corresponding Google Firestore documents.
 
-- makes the fight more unpredictable and harder for the attacker to guess which demons he might eliminate. After a fight both users are informed about the result (using Android Toast/Push Notification) and the health points of the surviving demons are updated in the corresponding Google Firestore documents.
+As users can currently add an unlimited amount of demons to a stash the defense of a stash gets exponentially stronger the more demons the defender places on them.
+In a later version it would probably be sensible to introduce limits to the maximal amount of defending demons.
 
-- as users can currently add an unlimited amount of demons to a stash the defense of a stash gets exponentially stronger the more demons the defender places on them
-
-- in a future version: defender can interactively intervene in the fight and dynamically add more defenders to the stash -> therefore fight must obviously take a while
 
 \input{sections/implementation-arcore.tex}
 
@@ -112,44 +110,41 @@ The exploitation subsystem consists of a lightweight image processing pipeline o
     \caption{Pipeline Scanning Phase}
     \label{fig:pipeline_phase1}
 \end{figure*}
-%\begin{figure*}
-    % \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
-    %\caption{Pipeline Capturing(Detail) Phase}
-    %\label{fig:prozess}
-%\end{figure*}
 
-% FIXME intro to OpenCV, features, usages?
-
-The major part of the data analysis is done in the scanning phase by the pipeline which can be seen in figure \ref{fig:pipeline_phase1}.
-This pipeline processes every frame which is captured by the camera with the intent to minimize the traffic between the client and the server through sending only the best frames.
-% The individual steps all provide the same interface and could therefore easily be ordered differently or reused at another place in the pipeline.
-% To ensure that the same type of objects is passed between the steps a camera frame will be wrapped in a \emph{Snapshot} object together with a score which represents the quality of it.
-
-\subsection{Snapshots / Communication with Pipeline}
-% FIXME in parts dupl with ARCore.Snapshots above -- might be fine if we focus on the pipeline-specific aspects
-- holds OpenCV Mat (represents frame) and score (calculated in steps)
-- also able to convert Mat to base64 and make a parameter list out of attributes (both for sending) 
-
-- AR-Snapshots: additional fields (points in room and viewProjectionMatrix)
+The major part of the data analysis is done in the scanning phase by the pipeline which can be seen in \autoref{fig:pipeline_phase1}.
+The pipeline is started as soon as the AR subsystem hands over as snapshot.
+In addition to the features described in \autoref{sec:snapshots} a score is added to the snapshot to determine its quality.
+Furthermore, an offset will be tracked if the original frame will be cropped and only a small part is used for further processing. \\
+Every snapshot will then be analyzed with the intent to minimize the traffic between the client and the server by sending only the best frames.
+The server-side analysis will then yield points of interest based on those frames.
 
 \subsection{Steps}
 
 The \emph{step} object is the abstract representation of each possible step of the pipeline and therefore each implementation provides the same interface to ensure interchangeability and reusability.
 After a step is executed via calling the \emph{start} function the \emph{process} method is called and will, as the name implies, do the actual processing of a frame.
-Afterward, the \emph{output} method will start all its following steps with the possibly new \emph{snapshot}.\\
+Afterward, the \emph{output} method will start all its following steps with the possibly new snapshot.\\
 A special case of a step is the \emph{StepWithQueue} class where each snapshot is put into a priority queue based on its score.
 This is useful in cases where only the best frame should be processed or where it should be processed first.
-In this section we will explain the specific steps used in the scanning phase pipeline shown in figure~\ref{fig:pipeline_phase1} in detail.
+In this section we will explain the specific steps used in the scanning phase pipeline shown in \autoref{fig:pipeline_phase1} in detail.
 % Daten-Analyse-Pipeline
  % Finden von PoI
  % Capturing und Processing
  
- \textbf{Blur Estimation: }
- The first step of the pipeline is needed to preselect snapshots of which the quality is sufficient for further processing. 
- The frame of the snapshot, which is processed, will be converted to a grayscale image before the Laplace operator is applied to it.
- Afterward, the variance of the new image will be calculated and will indicate the blurriness where a higher variance will represent a sharper image.
- The idea behind this approach is that a blurry image (because of its nature) is less likely to have a lot of clear edges. 
- Therefore the variance of the Laplace operator, which is used to detect edges, will be lower than in a sharp picture. 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=8cm]{graphics/blur_grid_sep.png}
+    \caption{Sharp images (with and without Laplace operator) on the left and analogous blurry images on the right}
+    \label{fig:blur_estimation}
+\end{figure}
+ 
+\textbf{Blur Estimation: } 
+The first step of the pipeline is needed to preselect snapshots of which the quality is sufficient for further processing. 
+The frame of the snapshot, which is processed, will be converted to a grayscale image before the Laplace operator is applied to it.
+Examples of possible results after applying the Laplace operator can be seen in \autoref{fig:blur_estimation}.
+Afterward, the variance of the new image will be calculated and will indicate the blurriness where a higher variance will represent a sharper image.
+The idea behind this approach is that a blurry image (because of its nature) is less likely to have a lot of clear edges. 
+Therefore the variance of the Laplace operator, which is used to detect edges, will be lower than in a sharp picture. 
+For instance, the variance of the sharp picture displayed in \autoref{fig:blur_estimation} has a variance of 1152, whereas the variance of the blurry one is only 7. 
  
  \textbf{Angle Change: }
 Subclassing from \emph{StepWithQueue}, the Angle Change Step won't process each snapshot individually but rather place them in a priority queue.
@@ -159,7 +154,7 @@ Eventually, the queue will be cleared of all the remaining snapshots.
 \textbf{Pattern Recognition: }
 One of our assumed use cases for the game-based object detection is the recognition of known patterns, for example, brand logos or in more extreme cases symbols that show dissident tendencies.
 This is a classic use case for a feature matching approach.
-We utilize an ORB (Oriented FAST and Rotated BRIEF) key point descriptor described by Rublee et al. that is rotation invariant and robust to noise, and therefore well applicable to real-world scenes~\autocite{rublee2011orb}.
+We utilize an ORB (Oriented FAST and Rotated BRIEF) key point descriptor described by Rublee et al. that is rotation invariant and robust to noise, and therefore well applicable to real-world scenes~\cite{rublee2011orb}.
 In the initialization of this step, the descriptors for all input logos are calculated and stored for later comparison.
 When a frame enters the step, key points are calculated and compared to the known logos with a brute force matcher using a hamming distance as the measurement.
 Every pairing falling under a fixed threshold is considered a match, and the mobile client sends a sighting confirmation to the data backend.
@@ -169,11 +164,11 @@ The brand matching use case, therefore, does not rely on computationally expensi
 
 \begin{figure*}[t]
   \centering
-  \subcaptionbox{Frame input\label{fig:cont_dect1}}[.3\linewidth][c]{%
+  \subcaptionbox{Original  input frame.\label{fig:cont_dect1}}[.3\linewidth][c]{%
     \includegraphics[height=7.2cm]{graphics/contours/original.jpg}}\quad
-  \subcaptionbox{Preprocessed frame\label{fig:cont_dect2}}[.3\linewidth][c]{%
+  \subcaptionbox{Preprocessed and binarized  frame.\label{fig:cont_dect2}}[.3\linewidth][c]{%
     \includegraphics[height=7.2cm]{graphics/contours/canny.jpg}}\quad
-  \subcaptionbox{Selected contours\label{fig:cont_dect3}}[.3\linewidth][c]{%
+  \subcaptionbox{Selected contours, passing contours are marked in green.\label{fig:cont_dect3}}[.3\linewidth][c]{%
     \includegraphics[height=7.2cm]{graphics/contours/finished.jpg}}
 
   \caption{Detection of contours in a real-word scene.}\label{fig:cont_dect}
@@ -195,19 +190,19 @@ We reason that this information can most likely be found in areas discernible fr
 The frame is preprocessed in several steps to maximize recognizable contours:
 First, we apply a Gaussian Blur with a small kernel to reduce image noise, and then apply a bilateral filter to smooth the image further while keeping edges intact.
 Afterward, a Canny edge filter with a dynamic threshold is applied to binarize the frame.
-The result of this preprocessing can be found in figure~\ref{fig:cont_dect1}.
+The result of this preprocessing can be found in \autoref{fig:cont_dect1}.
 On this image, we run a contour detection algorithm provided by OpenCV to retrieve a list of contours.
 Contours with a small size beneath a fixed threshold are culled from this list to further sort out \enquote{scene noise} like the numerous objects on the left side of the desk.
 The outlines of these contours are approximated by polygons for which the deviation epsilon is based on the contour's area.
 Once again we sort out polygons with more than seven edges to reduce our set of candidates.
-All contours with a large enough area can be seen in figure~\ref{fig:cont_dect3}. Those with simple enough approximations are colored green.
+All contours with a large enough area can be seen in \autoref{fig:cont_dect3}. Those with simple enough approximations are colored green.
 We can see that from the complex original scene, only three areas of the image remain.
 However, one potentially interesting area in the foreground is left out and thus will not be considered in later steps of the pipeline.
 Each selected contour is cropped from the image and will be passed forward to the next step.
 
 \textbf{Noise Estimation: }
 To determine which of the found contours are likely to contain (textual) information, we first calculate a noise measure.
-We use a simple kernel for fast noise variance estimation proposed by Immerkaer~\autocite{immerkaer1996fast}.
+We use a simple kernel for fast noise variance estimation proposed by Immerkaer.~\cite{immerkaer1996fast}.
 The author notes that \enquote{In highly textured images or regions, though,
 the noise estimator perceives thin lines as noise}.
 We utilize this property of the estimator as a criterium for the detection of small, dense text.
@@ -217,17 +212,35 @@ The score of the snapshot is multiplied with the noise value, and if the noise t
 
 \textbf{Colorfulness Estimation: }
 To further preselect the remaining contours, we estimate the colorfulness of the image regions.
-A fast method for this is proposed by Hasler, meant to be used as an overall colorfulness estimation of a natural scene.~\autocite{hasler2003measuring}.
+A fast method for this is proposed by Hasler, meant to be used as an overall colorfulness estimation of a natural scene.~\cite{hasler2003measuring}.
 We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
 Regions with high color variance are therefore not passed forward to the next step.
 The score is once again multiplied with the colorfulness value.
 In practice, contours with a high amount of noise and a low color variance are good estimates for regions of the image that actually contain text.
 Nevertheless, we send each contour passing the preselect steps to the data backend for further analysis of scene text occurrences.
 
+\begin{figure}[t]
+\centering
+  \subcaptionbox{\textbf{N:} 0.9, \textbf{C:} 11.9\label{fig:estimators1}}{%
+    \includegraphics[height=3cm]{graphics/estimators/cover1.jpg}}\quad
+  \subcaptionbox{\textbf{N:} 0.95, \textbf{C:} 15.5\label{fig:estimators2}}{%
+    \includegraphics[height=3cm]{graphics/estimators/cover2.jpg}}\quad
+  \subcaptionbox{\textbf{N:} 1.29, \textbf{C:} 13.1\label{fig:estimators3}}{%
+    \includegraphics[height=3cm]{graphics/estimators/letter.jpg}}
+\newline
+\centering
+  \subcaptionbox{\textbf{N:} 0.6, \textbf{C:} 1.8\label{fig:estimators4}}{%
+    \includegraphics[height=2.5cm]{graphics/estimators/wall.png}}
+  \subcaptionbox{\textbf{N:} 0.8, \textbf{C:} 30.3\label{fig:estimators5}}{%
+    \includegraphics[height=2.5cm]{graphics/estimators/desk.png}}
+
+  \caption{Noise (N) and Colorfulness (C) estimators applied to dewarped contours and wall and desk textures for comparison.}\label{fig:estimators}
+\end{figure}
+
 \subsection{Communication Between Phone and Server}
 
 After a snapshot was processed in the pipeline it is added to the priority queue of the sending step where all snapshots are ordered by their calculated score.
-The transmission itself is handled by \emph{Volley} a fast Android networking library\footnote{https://github.com/google/volley}.
+The transmission itself is handled by \emph{Volley} a fast Android networking library~\cite{volley}.
 Every 0.5s a POST-request will be prepared including the base64 encoded frame of the best snapshot in the priority queue and the id of the player. 
 After being added to the request queue of Volley, the request will then be sent to the \emph{detect\_text} endpoint of the server as soon as possible.
 
@@ -241,22 +254,22 @@ In the first case, only the user id and the detected brand are transmitted as st
 
 \subsection{Server-side Analysis}
 
-The backend is based on the Python framework \emph{Flask}\footnote{http://flask.pocoo.org/} and provides multiples endpoints where it accepts data sent from the Android Clients.
+The backend is based on the Python framework \emph{Flask}~\cite{flask} and provides multiples endpoints where it accepts data sent from the Android Clients.
 
 Frames that were processed in the scanning pipeline will be sent to the \emph{detect\_text} endpoint where a text detection will be applied.
 A frame which passes the pipeline is likely to include text but to guarantee that this is the case and not only random noise was found, a text detection is applied. 
-The \emph{EAST scene text detection} proposed by Zhou et al. determines quadrilateral shapes around possible text areas by feeding the supplied frame into a pre-trained neural network~\autocite{Zhou2017EASTAE}.
+The \emph{EAST scene text detection} proposed by Zhou et al. determines quadrilateral shapes around possible text areas by feeding the supplied frame into a pre-trained neural network~\cite{Zhou2017EASTAE}.
 If text is found, the server calculates the center of all found shapes and sends a response with the coordinates back to the client, where the snapshot can project these values into a three-dimensional real-world point of interest.
 
 If a close-up of a point of interest is taken in the second game phase, it will be transmitted via the \emph{ocr} route. 
-This will trigger a more precise analysis of the received frame involving the \emph{EAST scene text detection} and \emph{pytesseract}\footnote{https://github.com/madmaze/pytesseract}, which is a Python wrapper for Google's OCR framework \emph{Tesseract}\footnote{https://github.com/tesseract-ocr/tesseract}.
+This will trigger a more precise analysis of the received frame involving the \emph{EAST scene text detection} and \emph{pytesseract}~\cite{pytesseract}, which is a Python wrapper for Google's OCR framework \emph{Tesseract}~\cite{tesseract}.
 The text detection is applied to the frame and the resulting text boxes will be processed individually in the following steps.
 First, the image is rotated to ensure that the text is aligned with the borders of the image.
 Subsequently, the image is converted to grayscale as well as eroded and dilated in order to remove potential noise.
 A bilateral filter is then applied to receive an image which is only black and white because an OCR algorithm will work best under those circumstances.
 Finally, said OCR algorithm which is provided by \emph{pytesseract} will be applied to the image.
 Because of the preprocessing, it tries to interpret the given image as a single line of text which is either English or German. 
-The resulting string will be saved to an SQLite\footnote{https://www.sqlite.org/index.html} database together with the user id of the Android client, the filename of the cropped text box and a timestamp.
+The resulting string will be saved to an SQLite database \cite{sqlite} together with the user id of the Android client, the filename of the cropped text box and a timestamp.
 
 The third and last endpoint is called \emph{brand} and is used to store the user id, timestamp and the name of a recognized brand in the database.
 
@@ -275,8 +288,8 @@ The third and last endpoint is called \emph{brand} and is used to store the user
 %----------------------------------------------------------------
 % Sources
 %----------------------------------------------------------------
-%\bibliographystyle{acmsiggraph}
-%\bibliography{foo-paper}
-\printbibliography 
+\bibliographystyle{acmsiggraph}
+\bibliography{foo-paper}
+%\printbibliography 
 
 \end{document}
