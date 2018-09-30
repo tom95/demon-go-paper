@@ -2,24 +2,40 @@
 % Introduction
 %----------------------------------------------------------------
 \section{Introduction}
-- features of today's smartphones 
- - cameras able to take high resolution pictures/videos
- - geolocation via GPS
- - ability to use high speed internet (where available) -> send high amounts of data/video streaming possible
- - high processing power, multiple cores, quite some RAM
- - allows complex calculations, analysis of video data, e.g. in context of AR
+Modern smartphones provide a vast array of capabilities to support their diverse use cases.
+Multiple built-in cameras are able to take high-resolution pictures and videos with up to tens of megapixels of combined footage.
+Seamless location tracking is enabled via a GPS unit that allows real-time retrieval of the user's geolocation.
+Acceleration and gyroscopic sensors provide accurate data about the phones movements.
+With the broad availability of high-speed mobile transmission standards such as LTE, large amounts of data can be sent, enabling upload-intensive tasks such as live video streaming.
+In addition, high-end smartphones are equipped with high-performance, multicore CPUs and a sizeable amount of RAM, bringing with them veritable processing power on their own.
+With the introduction of Augmented Reality (AR) frameworks, we see these capabilities put to use to deduce a 3D point cloud reflection of the user's environment through computationally complex analysis of the camera feed and inertial sensors.
+% - features of today's smartphones 
+%  - cameras able to take high resolution pictures/videos
+%  - geolocation via GPS
+%  - ability to use high speed internet (where available) -> send high amounts of data/video streaming possible
+%  - high processing power, multiple cores, quite some RAM
+%  - allows complex calculations, analysis of video data, e.g. in context of AR
 
-- Pokemon-Go
-- popular game about catching Pokemon in the real world
-- around 800 million downloads (30.5.18, https://www.playm.de/2018/05/pokemon-go-35-403807/)
+The first wildly successful application to include these AR features was Pokémon GO, a popular game about catching Pokémon in the real world.
+As of May 2018, it has been downloaded more than 800 million times, and it had around 45 million daily active users in it's prime time [CITATION NEEDED].
+% - Pokemon-Go
+% - popular game about catching Pokemon in the real world
+% - around 800 million downloads (30.5.18, https://www.playm.de/2018/05/pokemon-go-35-403807/)
+The app utilizes geolocation tracking to identify Pokémon, events and special places near the user's location, while an AR environment is created to interact with Pokémon.
+To play the game, the user necessarily requires an internet connection to connect to an external server which controls the game flow and receives player data.
+Players noted the high battery consumption posed by the requirements of the game, but adopted by bringing external battery packs [CITATION NEEDED].
+% - uses location of user to identify Pokemon/Events/special places near him
+% - able to use AR to interact with Pokemon in real world 
+% - (always) connected to the internet and able to transfer data, no opt-out
 
-- uses location of user to identify Pokemon/Events/special places near him
-- able to use AR to interact with Pokemon in real world 
-- (always) connected to the internet and able to transfer data, no opt-out
+We provide an example for how such an application could misuse the given access permissions, especially because access to sensitive data such as the camera feed is expected by the user.
+% - possible to create very detailed profiles of players
+% - tracking of location and movement (further analysis could discover certain habits/patterns)
+This unchecked access allows the computational analysis of everything the user points their camera at: Textual information, faces of persons in the vicinity or discernible brand logos.
+While highly unethical, this analysis could be used for a wide range of use cases, including espionage, preparation or even automated data theft, or simply targeted advertisements.
+% - analysis of everything where persons points their camera at: texts, faces, brands
+% - can be used for espionage, preparation of crimes or simply targeted advertisements
+Our prototype aims to showcase the potential dangers that the improvident usage of AR-applications can bring, focusing on the demo cases of espionage of sensitive data as well as brand label recognition to create a profile of the user's consumption behavior.
+We try to keep the showcase close to real-world applicability, dealing with concerns such as scalability and limited data transfer volumes.
 
-- possible to create very detailed profiles of players
-- tracking of location and movement (further analysis could discover certain habits/patterns)
-- analysis of everything where persons points their camera at: texts, faces, brands
-- can be used for espionage, preparation of crimes or simply targeted advertisements
-
-- hence we created a demo showcase to reveal the potential dangers that the improvident usage of AR-apps can bring
+% - hence we created a demo showcase to reveal the potential dangers that the improvident usage of AR-apps can bring
