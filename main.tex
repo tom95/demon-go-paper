@@ -43,9 +43,9 @@
 % Zusammenfassung
 %----------------------------------------------------------------
 \begin{abstract}
-With the emergence of easy-to-use AR frameworks and increasing  capabilities of modern smartphones, the potential for automated analysis of the user's camera feed arises.
-However, malicious actors could employ such analyses for illicit surveillance or unethical profiling use cases.
-We propose a showcase application that demonstrates two of these use cases. In the context of an AR game, we scan the user's perimeter for brand logos, and try to lead the player into providing close-up shots of potentially sensitive information.
+With the emergence of easy-to-use Augmented Reality (AR) frameworks and increasing capabilities of modern smartphones, the potential for automated analysis of the user's camera feed arises.
+However, malicious actors could employ such analyses for illicit surveillance or unethical profiling use cases, all the while staying hidden from the end user.
+We propose a showcase application that demonstrates two of these use cases. In the context of an AR game, we scan the user's perimeter for brand logos and try to lead the player into providing close-up shots of potentially sensitive textual information.
 Even though the app is prototypical, through it one can foresee the severe potential for misuse of soon-to-be widespread AR applications.
 \end{abstract}
 
@@ -74,19 +74,21 @@ The exploitation subsystem consists of a lightweight image processing pipeline o
 
 \subsection{Handling and Displaying the Game State}
 
-Demon GO is using the live locatition platform Mapbox to display an interactive map of the augmented world with markers at the geo-locations of stashes with their range of influence.
-For own stashes the user also sees icons representing every demon he placed to defend the stash implemented as different map layers that each contain the corresponding demon collection placed on a stash.
+Demon GO is using the live location platform \cite{Mapbox} Mapbox to display an interactive map of the augmented world with markers at the geo-locations of stashes with their range of influence.
+For own stashes, the user also sees icons representing every demon he placed to defend the stash implemented as different map layers that each contains the corresponding demon collection placed on a stash.
 
 %\subsection{Storing and Syncing Stash Data}
 To allow a multiplayer live interaction it was necessary to easily sync the current game state (players, stashes, demons) across multiple clients on different devices. 
 Therefore we decided to use the document-based NoSQL-database Google Firestore, Google's current flagship database for mobile app development, which offers easy setup, cloud hosting and uncomplicated state syncing across clients.
 
-The database consists of three document collections that  documents are saved in the following hierarchy: for every player id --> stashes/null stash --> demons for stash (everything indexed by id)
+%The database consists of three document collections that  documents are saved in the following hierarchy: for every player id --> stashes/null stash --> demons for stash (everything indexed by id)
 
-The app implements change listeners for the collections of stashes and demons and depending on what type of change event happened either only the updated stashes or also their defending demon markers on the map are redrawn.
+The app implements change listeners for the collections of all stashes and their defending demons and depending on what type of change event happened either only the updated stashes or also their defending demon markers on the map are redrawn.
 Both collections get updated after every fight and every placement of a demon onto a stash.
-Furthermore a stash gets updated when the user deposits EP into or withdraws EP from it.
-As we currently only have few stashes we listen for changes on every stash but for an upcoming version we could filter the change listeners on nearby stashes using built-in Firestore filters.
+Furthermore, a stash gets updated when the user deposits EP into or withdraws EP from it.
+Whenever the radius of a stash changes (as a consequence of a change in the aggregated defenders' HP) the distance to every other stash minus its radius is computed to gain the maximal possible stash radius.
+As we currently only have few stashes we listen for changes on every stash. 
+For an upcoming version, we could filter the change listeners on nearby stashes using built-in Firestore query selectors.
 
 Demons that the player didn't place at a stash are saved in the player's \emph{null-stash} which is saved in the player's collection instead of the collection of stashes as it does not need to be synced with the other players.
 The \emph{null-stash} is only updated when a new demon was summoned or captured and after every fight in which the attacking demon lost HP.
@@ -100,16 +102,9 @@ This makes the fight more unpredictable and harder for the attacker to guess whi
 As users can currently add an unlimited amount of demons to a stash the defense of a stash gets exponentially stronger the more demons the defender places on them.
 In a later version it would probably be sensible to introduce limits to the maximal amount of defending demons.
 
-
 \input{sections/implementation-arcore.tex}
 
 \section{Data Analysis Implementation}
-\label{sec:implementation-data-analysis}
-\begin{figure*}
-    \includegraphics[width=\textwidth]{graphics/new_pipeline_phase_1.png}
-    \caption{Pipeline Scanning Phase}
-    \label{fig:pipeline_phase1}
-\end{figure*}
 
 The major part of the data analysis is done in the scanning phase by the pipeline which can be seen in \autoref{fig:pipeline_phase1}.
 The pipeline is started as soon as the AR subsystem hands over as snapshot.
@@ -117,6 +112,25 @@ In addition to the features described in \autoref{sec:snapshots} a score is adde
 Furthermore, an offset will be tracked if the original frame will be cropped and only a small part is used for further processing. \\
 Every snapshot will then be analyzed with the intent to minimize the traffic between the client and the server by sending only the best frames.
 The server-side analysis will then yield points of interest based on those frames.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=8cm]{graphics/blur_grid_sep.png}
+    \caption{Sharp images (with and without Laplace operator) on the left and analogous blurry images on the right}
+    \label{fig:blur_estimation}
+\end{figure}
+
+\begin{figure*}[t]
+  \centering
+  \subcaptionbox{Original  input frame.\label{fig:cont_dect1}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/original.jpg}}\quad
+  \subcaptionbox{Preprocessed and binarized  frame.\label{fig:cont_dect2}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/canny.jpg}}\quad
+  \subcaptionbox{Selected contours, passing contours are marked in green.\label{fig:cont_dect3}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/finished.jpg}}
+
+  \caption{Detection of contours in a real-word scene.}\label{fig:cont_dect}
+\end{figure*}
 
 \subsection{Steps}
 
@@ -130,12 +144,6 @@ In this section we will explain the specific steps used in the scanning phase pi
  % Finden von PoI
  % Capturing und Processing
  
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=8cm]{graphics/blur_grid_sep.png}
-    \caption{Sharp images (with and without Laplace operator) on the left and analogous blurry images on the right}
-    \label{fig:blur_estimation}
-\end{figure}
  
 \textbf{Blur Estimation: } 
 The first step of the pipeline is needed to preselect snapshots of which the quality is sufficient for further processing. 
@@ -148,11 +156,11 @@ For instance, the variance of the sharp picture displayed in \autoref{fig:blur_e
  
  \textbf{Angle Change: }
 Subclassing from \emph{StepWithQueue}, the Angle Change Step won't process each snapshot individually but rather place them in a priority queue.
-Only when the phone has been moved more than 10cm in any direction or has been rotated by more than 5 degrees the best snapshot will be passed to the next steps.
+Only when the phone has been moved more than 10 centimetres in any direction or has been rotated by more than 5 degrees the best snapshot will be passed to the next steps.
 Eventually, the queue will be cleared of all the remaining snapshots.
  
 \textbf{Pattern Recognition: }
-One of our assumed use cases for the game-based object detection is the recognition of known patterns, for example, brand logos or in more extreme cases symbols that show dissident tendencies.
+One of our assumed use cases for the game-based object detection is the recognition of known patterns, for example brand logos or in more extreme cases symbols that show dissident tendencies.
 This is a classic use case for a feature matching approach.
 We utilize an ORB (Oriented FAST and Rotated BRIEF) key point descriptor described by Rublee et al. that is rotation invariant and robust to noise, and therefore well applicable to real-world scenes~\cite{rublee2011orb}.
 In the initialization of this step, the descriptors for all input logos are calculated and stored for later comparison.
@@ -162,17 +170,6 @@ We were able to choose this threshold in a way that false positives were nonexis
 As the descriptor calculation for the frame takes around a hundred times longer than the actual matching with a comparison image, we can search for a large number of logos before performance concerns become relevant.
 The brand matching use case, therefore, does not rely on computationally expensive machine learning models.
 
-\begin{figure*}[t]
-  \centering
-  \subcaptionbox{Original  input frame.\label{fig:cont_dect1}}[.3\linewidth][c]{%
-    \includegraphics[height=7.2cm]{graphics/contours/original.jpg}}\quad
-  \subcaptionbox{Preprocessed and binarized  frame.\label{fig:cont_dect2}}[.3\linewidth][c]{%
-    \includegraphics[height=7.2cm]{graphics/contours/canny.jpg}}\quad
-  \subcaptionbox{Selected contours, passing contours are marked in green.\label{fig:cont_dect3}}[.3\linewidth][c]{%
-    \includegraphics[height=7.2cm]{graphics/contours/finished.jpg}}
-
-  \caption{Detection of contours in a real-word scene.}\label{fig:cont_dect}
-\end{figure*}
 
 % \begin{figure}%
 %     \centering
@@ -217,7 +214,9 @@ We presume that regions of legible text are usually low in color variance to inc
 Regions with high color variance are therefore not passed forward to the next step.
 The score is once again multiplied with the colorfulness value.
 In practice, contours with a high amount of noise and a low color variance are good estimates for regions of the image that actually contain text.
-Nevertheless, we send each contour passing the preselect steps to the data backend for further analysis of scene text occurrences.
+The scores of the two estimation measures on the found contours and a piece of wall and desk for comparison's sake can be seen in \autoref{fig:estimators}.
+We can see that the letter does indeed possess a high noise score, but the colorfulness is not especially different from the other low-color contours.
+We therefore send each contour passing the preselect steps to the data backend for further analysis of scene text occurrences.
 
 \begin{figure}[t]
 \centering

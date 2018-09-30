@@ -38,7 +38,21 @@ When we move to the capturing phase and did not get enough points of interest fr
 Otherwise we, again, fall back to using random points in the room box.
 Using this method, we managed to get the demon to very stable positions most of the time, since we only choose points that ARCore was able to identify with high confidence.
 If we naively chose the four highest confidence points, we will likely end up picking points in the same corner of the room because the confidence typically increases significantly for an entire area if the camera points to it long enough.
-Instead, we choose points that are further apart, as candidate points} will only replace their closest best point and not affect the other three.
+Instead, we choose points that are further apart, as candidate points will only replace their closest best point and not affect the other three.
+
+\begin{figure}
+    \centering
+    \includegraphics[height=8cm]{graphics/snapshot-points.jpg}
+    \caption{Visualization of the information saved in a snapshot. Visible are the pixel data of the image and the subset of tracking points that are saved, symbolized by the cubes. Red cubes report a low confidence, green cubes a high confidence. The confidence information is currently not persisted in the snapshots, but useful for debugging.}
+    \label{fig:snapshot_data}
+\end{figure}
+
+\label{sec:implementation-data-analysis}
+\begin{figure*}
+    \includegraphics[width=\textwidth]{graphics/new_pipeline_phase_1.png}
+    \caption{Pipeline Scanning Phase}
+    \label{fig:pipeline_phase1}
+\end{figure*}
 
 \subsection{Snapshots}
 \label{sec:snapshots}
@@ -48,12 +62,6 @@ The data exploitation subsystem and the AR subsystem only communicate for a sing
 We distill every frame provided by ARCore to a snapshot.
 Snapshots contain the pixel data, typically at a resolution of 1080 by 1920 pixels, the position in virtual space of all tracking points currently in the ARCore session and the current view and projection matrices of the virtual camera. See  \autoref{fig:snapshot_data} for a Visualization.
 
-\begin{figure}
-    \centering
-    \includegraphics[height=8cm]{graphics/snapshot-points.jpg}
-    \caption{Visualization of the information saved in a snapshot. Visible are the pixel data of the image and the subset of tracking points that are saved, symbolized by the cubes. Red cubes report a low confidence, green cubes a high confidence. The confidence information is currently not persisted in the snapshots, but useful for debugging.}
-    \label{fig:snapshot_data}
-\end{figure}
 
 % - pipeline reports back with 2d PoI
 % - challenge: likely won't have depth component for an arbitrary point on image
