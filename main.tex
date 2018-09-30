@@ -6,6 +6,8 @@
 \usepackage{algpseudocode}
 \usepackage{url}
 \usepackage{csquotes}
+\usepackage{subcaption}
+
 \usepackage{subfig}
 
 \title{Demonstration of Game-Based Object Detection}
@@ -31,6 +33,7 @@
 %}
 
 \maketitle
+
 
 %----------------------------------------------------------------
 % Zusammenfassung
@@ -101,9 +104,9 @@ The exploitation subsystem consists of a light weight image processing pipeline 
 \section{Data Analysis Implementation}
 \label{sec:implementation-data-analysis}
 \begin{figure*}
-    \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
+    \includegraphics[width=\textwidth]{graphics/new_pipeline_phase_1.png}
     \caption{Pipeline Scanning Phase}
-    \label{fig:prozess}
+    \label{fig:pipeline_phase1}
 \end{figure*}
 %\begin{figure*}
     % \includegraphics[width=\textwidth]{graphics/pipeline_phase_1.png}
@@ -132,41 +135,90 @@ After a step is executed via calling the \emph{start} function the \emph{process
 Afterwards the \emph{output} method will start all its following steps with the possibly new \emph{snapshot}.\\
 A special case of a step is the \emph{StepWithQueue} class where each snapshot is put into a priority queue based on its score.
 This is useful in cases where only the best frame should be processed or where it should be processed first.
-
+In this section we will explain the specific steps used in the scanning phase pipeline shown in figure~\ref{fig:pipeline_phase1} in detail.
 % Daten-Analyse-Pipeline
  % Finden von PoI
  % Capturing und Processing
  
- %\subsubsection{Blur Estimation}
- The \emph{BlurEstimation} step represents the first step of the pipeline and is needed to preselect snapshots whose quality is sufficient for further processing. 
+ \textbf{Blur Estimation: }
+ The first step of the pipeline is needed to preselect snapshots of which the quality is sufficient for further processing. 
  The frame of the snapshot, which is processed, will be converted to a grayscale image before the Laplace operator is applied to it.
  Afterwards the variance of the new image will be calculated and will indicate the blurriness where a higher variance will represent a sharper image.
  The idea behind this approach is that a blurry image (because of its nature) is less likely to have a lot of clear edges. 
  Therefore the variance of the Laplace operator, which is used to detect edges, will be lower than in a sharp picture. 
  
- The \emph{AngleChange} step is a subclass of \emph{StepWithQueue} and thus won't process each snapshot individually but rather place them in a priority queue.
- Only when the phone has been moved more than 10cm in any direction or has been rotated by more than 5 degrees the best snapshot will be passed to the next steps.
+ \textbf{Angle Change: }
+Subclassing from \emph{StepWithQueue}, the Angle Change Step won't process each snapshot individually but rather place them in a priority queue.
+Only when the phone has been moved more than 10cm in any direction or has been rotated by more than 5 degrees the best snapshot will be passed to the next steps.
  Eventually the queue will be cleared of all the remaining snapshots.
  
-%\subsubsection{Brand/Pattern Recognition}
-- Utilizes keypoint detection and feature descriptor matching to match recognizable patterns like brand logos and letterings \\
-- The ORB (Oriented FAST and Rotated BRIEF) technique is used \cite{rublee2011orb} \\
-- Computationally expensive step is keypoint calculation for frame.\\
--> Comparison with large number of patterns possible, as their keypoints can be precalculated.\\
-- 'cheaper' than neural network, especially on mobile devices\\
-- much better results than template matching
+\textbf{Pattern Recognition: }
+One of our assumed use cases for the game-based object detection is the recognition of known patterns, for example brand logos or in more extreme cases symbols that show dissident tendencies.
+This is a classic use case for a feature matching approach.
+We utilize a ORB (Oriented FAST and Rotated BRIEF) keypoint descriptor described by Rublee et al. that is rotation invariant and robust to noise, and therefore well applicable to real-world scenes\cite{rublee2011orb}.
+In the initialization of this step, the descriptors for all input logos are calculated and stored for later comparison.
+When a frame enters the step, keypoints are calculated and compared to the known logos with a brute force matcher using a hamming distance as measurement.
+Every pairing falling under a fixed threshold is considered a match, and the mobile client sends a sighting confirmation to the data backend.
+We were able to choose this threshold in a way that false positives were nonexistent in our tests, while still providing a satisfying match rate.
+As the descriptor calculation for the frame takes around a hundred times longer than the actual matching with a comparison image, we can search for a large number of logos before performance concerns become relevant.
+The brand matching use case therefore does not rely on computationally expensive machine learning models.
 
-%\subsubsection{Contour Detection}
-- Gaussian Blur -> bilateral filter -> Canny edge detection -> find Contours and cull by minimum size and maximal edges.\\
-- Found contours are cropped and passed to next steps for likelihood of text estimation
+\begin{figure*}[t]
+  \centering
+  \subcaptionbox{Frame input\label{fig:cont_dect1}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/original.jpg}}\quad
+  \subcaptionbox{Preprocessed frame\label{fig:cont_dect2}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/canny.jpg}}\quad
+  \subcaptionbox{Selected contours\label{fig:cont_dect3}}[.3\linewidth][c]{%
+    \includegraphics[height=7.2cm]{graphics/contours/finished.jpg}}
 
-%\subsubsection{Noise Estimation}
-- A simple kernel for fast noise estimation for which the authors note \enquote{In textured images or regions, though, the noise estimator perceives thin lines as noise.} \cite{immerkaer1996fast}. \\
-- We utilize this property to detect probable regions with dense text.
+  \caption{Detection of contours in a real-word scene.}\label{fig:cont_dect}
+\end{figure*}
 
-%\subsubsection{Colorfulness Estimation}
-- Simple measure for estimating colorfulness of an image \cite{hasler2003measuring}. \\
-- We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
+% \begin{figure}%
+%     \centering
+%     \subfloat[Frame input\label{fig:cont_dect1}]{{\includegraphics[height=7.2cm]{graphics/contours/original.jpg}}}%
+%     \qquad
+%     \subfloat[Preprocessed frame\label{fig:cont_dect2}]{{\includegraphics[height=7.2cm]{graphics/contours/canny.jpg}}}%
+%     \qquad
+%     \subfloat[Selected contours\label{fig:cont_dect3}]{{\includegraphics[height=7.2cm]{graphics/contours/finished.jpg}}}%
+%     \caption{Detection of contours in a real-word scene.}%
+%     \label{fig:cont_dect}
+% \end{figure}
+\textbf{Contour Detection: }
+As a starting point to check areas of the incoming frame for potentially sensitive information, we detect contours in the scene.
+We reason that this information can most likely be found in areas discernible from the rest of the frame, for example a piece of paper.
+The frame is preprocessed in several steps to maximize recognizable contours:
+First, we apply a Gaussian Blur with a small kernel to reduce image noise, and then apply a bilateral filter to smooth the image further while keeping edges intact.
+Afterwards, a Canny edge filter with a dynamic threshold is applied to binarize the frame.
+The result of this preprocessing can be found in figure~\ref{fig:cont_dect1}.
+On this image, we run a contour detection algorithm provided by OpenCV to retrieve a list of contours.
+Contours with a small size beneath a fixed threshold are culled from this list to further sort out \enquote{scene noise} like the numerous objects on the left side of the desk.
+The outlines of these contours are approximated by polygons for which the deviation epsilon is based on the contour's area.
+Once again we sort out polygons with more than seven edges to reduce our set of candidates.
+All contours with a large enough area can be seen in figure~\ref{fig:cont_dect3}. Those with simple enough approximations are colored green.
+We can see that from the complex original scene, only three areas of the image remain.
+However, one potentially interesting area in the foreground is left out and will thusly not be considered in later steps of the pipeline.
+Each selected contour is cropped from the image and will be passed forward to the next step.
+
+\textbf{Noise Estimation: }
+To determine which of the found contours are likely to contain (textual) information, we first calculate a noise measure.
+We use a simple kernel for fast noise variance estimation proposed by Immerkaer \cite{immerkaer1996fast}.
+The author notes that \enquote{In highly textured images or regions, though,
+the noise estimator perceives thin lines as noise}.
+We utilize this property of the estimator as a criterium for the detection of small, dense text.
+Areas with a low noise value are discarded in this step.
+It is, however, completely plausible that high-noise contours do not contain text.
+The score of the snapshot is multiplied with the noise value, and if the noise threshold is passed, the snapshot is passed on to the next step.
+
+\textbf{Colorfulness Estimation: }
+To further preselect the remaining contours, we estimate the colorfulness of the image regions.
+A fast method for this is proposed by Hasler, meant to be used as an overall colorfulness estimation of a natural scene.~\cite{hasler2003measuring}.
+We presume that regions of legible text are usually low in color variance to increase the contrast between letters and background.
+Regions with high color variance are therefore not passed forwards to the next step.
+The score is once again multiplied with the colorfulness value.
+In practice, contours with a high amount of noise and a low color variance are good estimates for regions of the image that actually contain text.
+Nevertheless, we send each contour passing the preselect steps to the data backend for further analysis of scene text occurrences.
 
 \subsection{Communication between phone and server}
 
@@ -189,10 +241,10 @@ The backend is based on the Python framework \emph{Flask}\footnote{http://flask.
 
 Frames that were processed in the scanning pipeline will be sent to the \emph{detect\_text} endpoint where a text detection will be applied.
 A frame which passes the pipeline is likely to include text but to guarantee that this is the case and not only random noise was found, a text detection is applied. 
-The \emph{EAST scene text detection} proposed by \cite{Zhou2017EASTAE} determines quadrilateral shapes around possible text areas by applying a neural network to the supplied frame.
-If possible text is found the server calculates the center of all the found shapes and sends a response with the coordinates back to the client where this can be translated into a 3 dimensional point of interest.
+The \emph{EAST scene text detection} proposed by \cite{Zhou2017EASTAE} determines quadrilateral shapes around possible text areas by feeding the supplied frame into a pre-trained neural network.
+If text is found, the server calculates the center of all found shapes and sends a response with the coordinates back to the client, where the snapshot can project these values into a 3 dimensional real-world point of interest.
 
-If a close-up of a point of interest is taken it will be transmitted via the \emph{ocr} route. 
+If a close-up of a point of interest is taken in the second game phase, it will be transmitted via the \emph{ocr} route. 
 This will trigger a more precise analysis of the received frame involving the \emph{EAST scene text detection} and \emph{pytesseract}\footnote{https://github.com/madmaze/pytesseract}, which is a Python wrapper for Google's OCR framework \emph{Tesseract}\footnote{https://github.com/tesseract-ocr/tesseract}.
 The text detection is applied to the frame and the resulting text boxes will be processed individually in the following steps.
 First, the image is rotated to ensured that the text is aligned with the borders of the image.
